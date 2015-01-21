@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "oc.h"
+#include "nb.h"
 #include "director.h"
 #include "energy.h"
 #include "meshvalue.h"
@@ -18,7 +18,6 @@
 #include "threevector.h"
 #include "vectorfield.h"
 #include "util.h"
-#include "output.h"
 
 #include "yy_mel_util.h"
 
@@ -28,11 +27,9 @@ class YY_StageIsotropicMEL:public Oxs_Energy {
 private:
   // Isotropic magnetoelastic coefficient MELCoef = B1 = B2 (J/m^3)
   Oxs_OwnedPointer<Oxs_ScalarField> MELCoef_init;
-  mutable Oxs_MeshValue<OC_REAL8m> MELCoef;
   mutable Oxs_OwnedPointer<Oxs_VectorField> displacement_init;
-  mutable Oxs_MeshValue<Oxs_ThreeVector> displacement;
 
-  mutable YY_Strain strain;
+  mutable YY_MELField MELField;
 
   // The following members were cribbed from stagezeeman.h
   OC_REAL8m hmult;  // multiplier
@@ -41,19 +38,7 @@ private:
   mutable OC_UINT4m mesh_id;
   mutable OC_BOOL stage_valid;
   mutable OC_UINT4m working_stage;  // Stage index
-  mutable Oxs_OwnedPointer<Oxs_VectorField> stagefield_init;
-  mutable Oxs_MeshValue<ThreeVector> stagefield;
   mutable ThreeVector max_field;
-  /// stagefield is a cached value filled by
-  /// stagefield_init when a change in mesh or
-  /// stage is detected.  stagefield_init is updated
-  /// when a change in stage is detected.  The stage_valid
-  /// boolean is set false in the constructor and Init();
-  /// It's purpose is to insure proper setup of stagefield_init
-  /// on the first pass.
-  ///  The max_field cache value is the field at the point
-  /// of maximum magnitude in stagefield.  It is cached
-  /// for B_MEL output below.  Units are A/m.
 
   // Vector field may be specified by *either* a list of
   // files, or else a Tcl command that returns a vector

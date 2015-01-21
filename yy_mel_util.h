@@ -8,7 +8,6 @@
 #define _YY_MEL_UTIL
 
 #include <string>
-#include <vector>
 
 #include "oc.h"
 #include "director.h"
@@ -20,31 +19,16 @@
 #include "threevector.h"
 #include "vectorfield.h"
 #include "util.h"
-#include "output.h"
 
 /* End includes */
-
-class YY_Strain {
+class YY_MELField {
 private:
-  Oxs_MeshValue<ThreeVector> u;       // Displacement
-  Oxs_MeshValue<OC_REAL8m> Ms;
-  OC_INDEX nx, ny, nz;
+  Oxs_MeshValue<OC_REAL8m> MELCoef;   // Isotropic MEL coefficient
 
-  OC_BOOL displacement_valid;
-  OC_BOOL strain_valid; // True if strain has been calculated
-
-  //mutable Oxs_OwnedPointer<Oxs_VectorField> diag_init;
-
-  Nb_TclCommand cmd;
-
-public:
-  //virtual const char* ClassName() const;
-  //// ClassName() is automatically generatoed by OXS_EXT_REGISTER macro.
-  YY_Strain();
-  ~YY_Strain() {};
-
-  Oxs_MeshValue<ThreeVector> diag;    // Diagonal elements of strain
-  Oxs_MeshValue<ThreeVector> offdiag; // Off-diagonal elements
+  // TODO: u is stored for debug. Remove it when the test is done.
+  mutable Oxs_MeshValue<ThreeVector> u;       // Displacement
+  mutable Oxs_MeshValue<ThreeVector> diag;    // Diagonal elements of strain
+  mutable Oxs_MeshValue<ThreeVector> offdiag; // Off-diagonal elements
   // in abbreviated suffix notation
   //  Strain      Diagonal   Off-diagonal
   // / 0 5 4 \   / 0     \   /   2 1 \
@@ -54,12 +38,39 @@ public:
   // offdiag.y = e_xz ([0][2])
   // offdiag.z = e_xy ([0][1])
 
-  void Init(const Oxs_SimState& state);
-  void SetDisplacement(const Oxs_SimState& state, const Oxs_MeshValue<ThreeVector>& u_in);
-  //void SetDisplacement(const Oxs_MeshValue<ThreeVector>& u_in)
-  //{ u = u_in; displacement_valid = 1; strain_valid = 0;};
+  OC_BOOL displacement_valid; // TODO: Remove when the test is done.
+  OC_BOOL strain_valid; // True if strain has been calculated
+  OC_BOOL MELCoef_valid;
 
-  void CalculateStrain(const Oxs_SimState&);
+  mutable ThreeVector max_field;
+
+public:
+  YY_MELField();
+  ~YY_MELField() {};
+  void Release();
+
+  // Note: Before calculation of MEL field, the MEL coefficient and the
+  // strain must be set with the following member functions. The strain can
+  // be set either directly with SetStrain or by specifying the displacement
+  // with SetDisplacement, which calculates the strain from the displacement.
+  void SetMELCoef(
+      const Oxs_SimState& state,
+      const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef_init);
+  void SetDisplacement(
+      const Oxs_SimState& state,
+      const Oxs_OwnedPointer<Oxs_VectorField>& u_init);
+  void SetStrain(
+      const Oxs_SimState& state,
+      const Oxs_OwnedPointer<Oxs_VectorField>& diag_init,
+      const Oxs_OwnedPointer<Oxs_VectorField>& offdiag_init);
+
+  void CalculateMELField(
+    const Oxs_SimState& state,
+    OC_REAL8m hmult,
+    Oxs_MeshValue<ThreeVector>& field_buf) const;
+
+  ThreeVector GetMaxField() const
+  { return max_field; };
 
   // For debug. Display variables in specified range
   void DisplayValues(

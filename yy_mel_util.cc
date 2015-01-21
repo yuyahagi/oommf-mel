@@ -4,49 +4,51 @@
  * 
  */
 
-#include "nb.h"
-
 #include "yy_MEL_util.h"
 
-OC_USE_STRING;
+#include "nb.h"
+#include "energy.h"
+#include "mesh.h"
+#include "rectangularmesh.h"
+#include "meshvalue.h"
+#include "simstate.h"
+#include "threevector.h"
+#include "vectorfield.h"
+#include "util.h"
 
 /* End includes */
 
-YY_Strain::YY_Strain():
+YY_MELField::YY_MELField():
   displacement_valid(0), strain_valid(0),
   diag(NULL), offdiag(NULL)
 {
-  // Set up initializers for the strain vectors
-  // Use cmd to generate field initializer
-  //vector<String> params;
-  //cmd.SaveInterpResult();
-  //cmd.SetCommandArg(0,stage);
-  //cmd.Eval();
-  //cmd.GetResultList(params);
-  //cmd.RestoreInterpResult();
-
-//  vector<String> params;
-//  params.push_back("Oxs_UniformVectorField");
-//  params.push_back("vector {1 0 0}");
-//  OXS_GET_EXT_OBJECT(params,Oxs_VectorField,diag_init);
-
-  //OXS_GET_EXT_OBJECT(params,Oxs_VectorField,diag_init);
-
 }
 
-void YY_Strain::Init(const Oxs_SimState& state)
+void YY_MELField::Release()
 {
+  u.Release();
   diag.Release();
   offdiag.Release();
+  MELCoef.Release();
 }
 
-void YY_Strain::CalculateStrain(const Oxs_SimState& state)
+void YY_MELField::SetMELCoef(const Oxs_SimState& state,
+    const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef_init)
 {
-  // TODO: Check mesh validity
-  fprintf(stderr, "YY_Strain::CalculateStrain(): Check mesh validity.\n");
+  // TODO: Check mesh size
+  MELCoef_init->FillMeshValue(state.mesh,MELCoef);
+  MELCoef_valid = 1;
+}
+
+void YY_MELField::SetDisplacement(const Oxs_SimState& state,
+    const Oxs_OwnedPointer<Oxs_VectorField>& u_init)
+{
+  // Check mesh size
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
-  // UpdateCache(state); // Do we need this?
+
+  u_init->FillMeshValue(state.mesh,u);
+  displacement_valid = 1;
 
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
@@ -63,17 +65,7 @@ void YY_Strain::CalculateStrain(const Oxs_SimState& state)
   diag.AdjustSize(mesh);
   offdiag.AdjustSize(mesh);
 
-  fprintf(stderr,"ThreeVector::Set() test.\n");
-  {
-    ThreeVector temp;
-    temp.Set(1.,2.,3.);
-    fprintf(stderr,"temp = (%e,%e,%e)\n",temp.x,temp.y,temp.z);
-    temp = u[7];
-    fprintf(stderr,"temp = (%e,%e,%e)\n",temp.x,temp.y,temp.z);
-  }
-
   // Compute du/dx
-  fprintf(stderr, "YY_Strain::CalculateStrain(): Compute du/dx.\n");
   for(OC_INDEX z=0; z<zdim; z++) {
     for(OC_INDEX y=0; y<ydim; y++) {
       for(OC_INDEX x=0; x<xdim; x++) {
@@ -82,13 +74,11 @@ void YY_Strain::CalculateStrain(const Oxs_SimState& state)
         ThreeVector du_dy;
         ThreeVector du_dz;
         if(Ms[i]==0.0) {
-  //fprintf(stderr, "Ms==0, diag[i].Set\n");
           diag[i].Set(0.0, 0.0, 0.0);
           offdiag[i].Set(0.0, 0.0, 0.0);
           continue;
         }
 
-  //fprintf(stderr, "du/dx\n");
         if(x<xdim-1 && Ms[i+1]!=0.0) du_dx  = u[i+1];
         else                         du_dx  = u[i];
         if(x>0 && Ms[i-1]!=0.0)      du_dx -= u[i-1];
@@ -116,9 +106,7 @@ void YY_Strain::CalculateStrain(const Oxs_SimState& state)
         else
           du_dz *= idelz;
 
-  //fprintf(stderr, "diag[i].Set() ");
         diag[i].Set(du_dx.x,du_dy.y,du_dz.z);
-  //fprintf(stderr, "offdiag[i].Set()\n");
         offdiag[i].Set(
           0.5*(du_dz.y+du_dy.z),
           0.5*(du_dx.z+du_dz.x),
@@ -126,8 +114,9 @@ void YY_Strain::CalculateStrain(const Oxs_SimState& state)
         );
       }
     }
-    strain_valid = 1;
   }
+
+  strain_valid = 1;
 
   // For debug, display values
   // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
@@ -135,23 +124,71 @@ void YY_Strain::CalculateStrain(const Oxs_SimState& state)
 
 }
 
-void YY_Strain::SetDisplacement(const Oxs_SimState& state,
-    const Oxs_MeshValue<ThreeVector>& u_in)
+void YY_MELField::SetStrain(const Oxs_SimState& state,
+    const Oxs_OwnedPointer<Oxs_VectorField>& diag_init,
+    const Oxs_OwnedPointer<Oxs_VectorField>& offdiag_init)
 {
-  u = u_in;
-  displacement_valid = 1;
-  strain_valid = 0;
-  fprintf(stderr,"u_in[i], u[i]:\n");
-  for(OC_INDEX i=0; i<15; i++) {
-    fprintf(stderr,"%e ",u_in[i].x);
-    fprintf(stderr,"%e ",u[i].x);
-  }
-
-  fprintf(stderr, "YY_Strain::SetDisplacement(): CalculateStrain().\n");
-  CalculateStrain(state);
+  // TODO: Check mesh size
+  diag_init->FillMeshValue(state.mesh,diag);
+  offdiag_init->FillMeshValue(state.mesh,offdiag);
+  displacement_valid = 0;
+  strain_valid = 1;
 }
 
-void YY_Strain::DisplayValues(
+void YY_MELField::CalculateMELField(
+  const Oxs_SimState& state,
+  OC_REAL8m hmult,
+  Oxs_MeshValue<ThreeVector>& field_buf) const
+{
+  // TODO: Check mesh validity
+  const OC_INDEX size = state.mesh->Size();
+  if(size<1) return;
+
+  const Oxs_MeshValue<ThreeVector>& spin = state.spin;
+  const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
+  const Oxs_MeshValue<OC_REAL8m>& Msi = *(state.Ms_inverse);
+  const Oxs_RectangularMesh* mesh =
+    dynamic_cast<const Oxs_RectangularMesh*>(state.mesh);
+  const OC_INDEX xdim = mesh->DimX();
+  const OC_INDEX ydim = mesh->DimX();
+  const OC_INDEX zdim = mesh->DimX();
+  const OC_INDEX xydim = xdim*ydim;
+
+  // Compute MEL field
+  for(OC_INDEX i=0; i<size; i++) {
+    // field_buf[i]*diag[i] returns a dot product. Don't use it.
+    field_buf[i].x  = spin[i].x*diag[i].x;
+    field_buf[i].y  = spin[i].y*diag[i].y;
+    field_buf[i].z  = spin[i].z*diag[i].z;
+    field_buf[i].x += spin[i].y*offdiag[i].z+spin[i].z*offdiag[i].y;
+    field_buf[i].y += spin[i].x*offdiag[i].z+spin[i].z*offdiag[i].x;
+    field_buf[i].z += spin[i].x*offdiag[i].y+spin[i].y*offdiag[i].x;
+    field_buf[i] *= -1/MU0*2*Msi[i]*MELCoef[i];
+  }
+  if(hmult != 1.0) field_buf *= hmult;
+
+  // H-field
+  max_field.Set(0.,0.,0.);
+  if(size>0) {
+    OC_INDEX max_i = 0;
+    OC_REAL8m max_magsq = field_buf[OC_INDEX(0)].MagSq();
+    for(OC_INDEX i=1; i<size; i++) {
+      OC_REAL8m magsq = field_buf[i].MagSq();
+      if(magsq>max_magsq) {
+        max_magsq = magsq;
+        max_i = i;
+      }
+    }
+    max_field = field_buf[max_i];
+  }
+
+  //DisplayValues(state,6,8,14,16,1,3);
+
+  // UpdateCache(state); // Do we need this?
+
+}
+
+void YY_MELField::DisplayValues(
     const Oxs_SimState& state,
     OC_INDEX xmin, OC_INDEX xmax,
     OC_INDEX ymin, OC_INDEX ymax,
