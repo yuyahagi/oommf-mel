@@ -19,7 +19,7 @@
 /* End includes */
 
 YY_MELField::YY_MELField():
-  displacement_valid(0), strain_valid(0),
+  strain_valid(0),
   diag(NULL), offdiag(NULL)
 {
 }
@@ -35,7 +35,6 @@ void YY_MELField::Release()
 void YY_MELField::SetMELCoef(const Oxs_SimState& state,
     const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef_init)
 {
-  // TODO: Check mesh size
   MELCoef_init->FillMeshValue(state.mesh,MELCoef);
   MELCoef_valid = 1;
 }
@@ -48,7 +47,6 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   if(size<1) return;
 
   u_init->FillMeshValue(state.mesh,u);
-  displacement_valid = 1;
 
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
@@ -120,7 +118,9 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
 
   // For debug, display values
   // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
+#ifdef YY_DEBUG
   DisplayValues(state,4,6,0,2,0,2);
+#endif
 
 }
 
@@ -128,10 +128,8 @@ void YY_MELField::SetStrain(const Oxs_SimState& state,
     const Oxs_OwnedPointer<Oxs_VectorField>& diag_init,
     const Oxs_OwnedPointer<Oxs_VectorField>& offdiag_init)
 {
-  // TODO: Check mesh size
   diag_init->FillMeshValue(state.mesh,diag);
   offdiag_init->FillMeshValue(state.mesh,offdiag);
-  displacement_valid = 0;
   strain_valid = 1;
 }
 
@@ -140,7 +138,6 @@ void YY_MELField::CalculateMELField(
   OC_REAL8m hmult,
   Oxs_MeshValue<ThreeVector>& field_buf) const
 {
-  // TODO: Check mesh validity
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
@@ -182,12 +179,9 @@ void YY_MELField::CalculateMELField(
     max_field = field_buf[max_i];
   }
 
-  //DisplayValues(state,6,8,14,16,1,3);
-
-  // UpdateCache(state); // Do we need this?
-
 }
 
+#ifdef YY_DEBUG
 void YY_MELField::DisplayValues(
     const Oxs_SimState& state,
     OC_INDEX xmin, OC_INDEX xmax,
@@ -353,3 +347,4 @@ void YY_MELField::DisplayValues(
   fprintf(stderr,"\n");
 
 }
+#endif  // YY_DEBUG

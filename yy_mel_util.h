@@ -4,6 +4,13 @@
  * 
  */
 
+//#define YY_DEBUG
+#ifdef YY_DEBUG
+#define YY_DEBUGMSG(x) fprintf(stderr,x)
+#else
+#define YY_DEBUGMSG(x) ;
+#endif
+
 #ifndef _YY_MEL_UTIL
 #define _YY_MEL_UTIL
 
@@ -25,7 +32,6 @@ class YY_MELField {
 private:
   Oxs_MeshValue<OC_REAL8m> MELCoef;   // Isotropic MEL coefficient
 
-  // TODO: u is stored for debug. Remove it when the test is done.
   mutable Oxs_MeshValue<ThreeVector> u;       // Displacement
   mutable Oxs_MeshValue<ThreeVector> diag;    // Diagonal elements of strain
   mutable Oxs_MeshValue<ThreeVector> offdiag; // Off-diagonal elements
@@ -38,7 +44,6 @@ private:
   // offdiag.y = e_xz ([0][2])
   // offdiag.z = e_xy ([0][1])
 
-  OC_BOOL displacement_valid; // TODO: Remove when the test is done.
   OC_BOOL strain_valid; // True if strain has been calculated
   OC_BOOL MELCoef_valid;
 

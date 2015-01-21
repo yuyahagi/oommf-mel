@@ -31,7 +31,7 @@ YY_StageIsotropicMEL::YY_StageIsotropicMEL(
   : Oxs_Energy(name,newdtr,argstr), number_of_stages(0),
   mesh_id(0), stage_valid(0)
 {
-  fprintf(stderr, "YY_StageIsotropicMEL constructor start.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL constructor start.\n");
   working_stage = static_cast<OC_UINT4m>(static_cast<OC_INT4m>(-1));
   // First ChangeFileInitializer() call should be triggered
   // by the stage_valid boolean.
@@ -54,7 +54,7 @@ YY_StageIsotropicMEL::YY_StageIsotropicMEL(
   }
   
   // Initialize outputs.
-  fprintf(stderr, "YY_StageIsotropicMEL constructor initialize outputs.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL constructor initialize outputs.\n");
   B_MEL_output.Setup(this, InstanceName(), "B max", "mT", 1,
     &YY_StageIsotropicMEL::Fill__B_MEL_output);
   B_MELx_output.Setup(this, InstanceName(), "Bx max", "mT", 1,
@@ -78,13 +78,13 @@ YY_StageIsotropicMEL::~YY_StageIsotropicMEL()
 
 OC_BOOL YY_StageIsotropicMEL::Init()
 {
-  fprintf(stderr, "YY_StageIsotropicMEL::Init(): start.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::Init(): start.\n");
   stage_valid = 0;
 
   mesh_id = 0;
   MELField.Release();
 
-  fprintf(stderr, "YY_StageIsotropicMEL::Init(): Calling Oxs_Energy::Init()\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::Init(): Calling Oxs_Energy::Init()\n");
   return Oxs_Energy::Init();
 }
 
@@ -101,19 +101,19 @@ void YY_StageIsotropicMEL::StageRequestCount(unsigned int& min,
 void YY_StageIsotropicMEL::ChangeDisplacementInitializer(
     OC_UINT4m stage, const Oxs_Mesh* mesh) const
 {
-  fprintf(stderr,"YY_StageIsotropicMEL::ChangeDisplacementInitializer(): start.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::ChangeDisplacementInitializer(): start.\n");
   // Setup displacement
   vector<String> params;
   if(filelist.empty()) {
     // Use cmd to generate field initializer
-    fprintf(stderr,"YY_StageIsotropicMEL::ChangeDisplacementInitializer(): filelist.empty.\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL::ChangeDisplacementInitializer(): filelist.empty.\n");
     cmd.SaveInterpResult();
     cmd.SetCommandArg(0,stage);
     cmd.Eval();
     cmd.GetResultList(params);
     cmd.RestoreInterpResult();
   } else {
-    fprintf(stderr,"YY_StageIsotropicMEL::ChangeDisplacementInitializer(): !filelist.empty.\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL::ChangeDisplacementInitializer(): !filelist.empty.\n");
     // Construct field initializer using Oxs_FileVectorField
     // with filename from filelist and range from mesh.
     OC_UINT4m index = stage;
@@ -147,7 +147,7 @@ void YY_StageIsotropicMEL::ChangeDisplacementInitializer(
     params.push_back(Nb_MergeList(options));
   }
 
-  //fprintf(stderr,"YY_StageIsotropicMEL::ChangeDisplacementInitializer(): OXS_GET_EXT_OBJECT, displacement_init.\n");
+  //YY_DEBUGMSG("YY_StageIsotropicMEL::ChangeDisplacementInitializer(): OXS_GET_EXT_OBJECT, displacement_init.\n");
   OXS_GET_EXT_OBJECT(params,Oxs_VectorField,displacement_init);
   working_stage = stage;
   stage_valid = 1;
@@ -158,7 +158,7 @@ YY_StageIsotropicMEL::FillDisplacementCache(const Oxs_SimState& state) const
 {
   const Oxs_Mesh* mesh = state.mesh;
   // Displacement
-  fprintf(stderr, "YY_StageIsotropicMEL::FillDisplacementCache(): FillMeshValue.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::FillDisplacementCache(): FillMeshValue.\n");
   MELField.SetDisplacement(state, displacement_init);
 
 }
@@ -168,21 +168,21 @@ void YY_StageIsotropicMEL::UpdateCache(const Oxs_SimState& state) const
   // Update cache as necessary
   if(!stage_valid) {
     // The first go.
-    fprintf(stderr, "YY_StageIsotropicMEL:UpdateCache(): !stage_valide.\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL:UpdateCache(): !stage_valide.\n");
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef_init);
     ChangeDisplacementInitializer(state.stage_number,state.mesh);
     FillDisplacementCache(state);
   } else if(working_stage != state.stage_number) {
     mesh_id = 0;
-    fprintf(stderr, "YY_StageIsotropicMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
     ChangeDisplacementInitializer(state.stage_number,state.mesh);
-    fprintf(stderr, "YY_StageIsotropicMEL:UpdateCache(): FillDisplacementCache().\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL:UpdateCache(): FillDisplacementCache().\n");
     FillDisplacementCache(state);
     mesh_id = state.mesh->Id();
   } else if(mesh_id != state.mesh->Id()) {
     mesh_id = 0;
-    fprintf(stderr, "YY_StageIsotropicMEL:UpdateCache(): in else, FillDisplacementCache().\n");
+    YY_DEBUGMSG("YY_StageIsotropicMEL:UpdateCache(): in else, FillDisplacementCache().\n");
     FillDisplacementCache(state);
     mesh_id = state.mesh->Id();
   }
@@ -192,17 +192,17 @@ void YY_StageIsotropicMEL::UpdateCache(const Oxs_SimState& state) const
 void YY_StageIsotropicMEL::GetEnergy
 (const Oxs_SimState& state, Oxs_EnergyData& oed) const
 {
-  fprintf(stderr, "YY_StageIsotropicMEL::GetEnergy(): Beginning the method.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::GetEnergy(): Beginning the method.\n");
   OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
-  fprintf(stderr, "YY_StageIsotropicMEL::GetEnergy(): UpdateCache().\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::GetEnergy(): UpdateCache().\n");
   UpdateCache(state);
 
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
 
-  fprintf(stderr, "YY_StageIsotropicMEL::GetEnergy(): Starting H_MEL calculation.\n");
+  YY_DEBUGMSG("YY_StageIsotropicMEL::GetEnergy(): Starting H_MEL calculation.\n");
 
   // Use supplied buffer space, and reflect that use in oed.
   oed.energy = oed.energy_buffer;
@@ -215,9 +215,8 @@ void YY_StageIsotropicMEL::GetEnergy
   MELField.CalculateMELField(state, hmult, field);
   max_field = MELField.GetMaxField();
 
-  // Calculate energy density
+  // Calculate pointwise energy density -0.5*MU0*<M,Hmel>
   for(OC_INDEX i=0; i<size; i++) {
-    // TODO: replace this equation with a right one.
     energy[i] = -0.5 * MU0 * Ms[i] * (spin[i]*field[i]);
   }
 
