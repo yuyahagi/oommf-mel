@@ -48,18 +48,8 @@ YY_StageMEL::YY_StageMEL(
   number_of_stages = GetUIntInitValue("stage_count",0);
 
   // Generate MELCoef initializer
-  if(HasInitValue("B1")) {
-    OXS_GET_INIT_EXT_OBJECT("B1",Oxs_ScalarField,MELCoef1_init);
-  } else {
-    MELCoef1_init.SetAsOwner(dynamic_cast<Oxs_ScalarField *>
-        (MakeNew("Oxs_UniformScalarField",director,"value 7.85e6")));
-  }
-  if(HasInitValue("B2")) {
-    OXS_GET_INIT_EXT_OBJECT("B2",Oxs_ScalarField,MELCoef2_init);
-  } else {
-    MELCoef2_init.SetAsOwner(dynamic_cast<Oxs_ScalarField *>
-        (MakeNew("Oxs_UniformScalarField",director,"value 7.85e6")));
-  }
+  OXS_GET_INIT_EXT_OBJECT("B1",Oxs_ScalarField,MELCoef1_init);
+  OXS_GET_INIT_EXT_OBJECT("B2",Oxs_ScalarField,MELCoef2_init);
 
   // Initialize outputs.
   YY_DEBUGMSG("YY_StageMEL constructor initialize outputs.\n");
