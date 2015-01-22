@@ -246,19 +246,19 @@ YY_StageMEL::Fill__B_MEL_output(const Oxs_SimState& state)
 
   if(B_MELx_output.GetCacheRequestCount() > 0) {
     B_MELx_output.cache.state_id = 0;
-    B_MELx_output.cache.value = sqrt(B.MagSq());
+    B_MELx_output.cache.value = B.x;
     B_MELx_output.cache.state_id = state.Id();
   }
 
   if(B_MELy_output.GetCacheRequestCount() > 0) {
     B_MELy_output.cache.state_id = 0;
-    B_MELy_output.cache.value = sqrt(B.MagSq());
+    B_MELy_output.cache.value = B.y;
     B_MELy_output.cache.state_id = state.Id();
   }
 
   if(B_MELz_output.GetCacheRequestCount() > 0) {
     B_MELz_output.cache.state_id = 0;
-    B_MELz_output.cache.value = sqrt(B.MagSq());
+    B_MELz_output.cache.value = B.z;
     B_MELz_output.cache.state_id = state.Id();
   }
 }
