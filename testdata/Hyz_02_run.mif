@@ -89,19 +89,21 @@ Specify Oxs_UZeeman [subst {
 
 Specify Oxs_Demag {}
 
-# YY_StageIsotropicMEL test
+# YY_StageMEL test
 Specify Oxs_UniformScalarField:B {
   value 7.85e6
 }
 
-Specify YY_StageIsotropicMEL:StageField1 [subst {
-  B :B
+Specify YY_StageMEL:StageField1 [subst {
+  B1 :B
+  B2 :B
   script {StageFileField1 $tStage $Ns $file_input $HAcAmpCoef_input }
   stage_count $nStage
 }]
 
-Specify YY_StageIsotropicMEL:StageField2 [subst {
-  B :B
+Specify YY_StageMEL:StageField2 [subst {
+  B1 :B
+  B2 :B
   script {StageFileField2 $tStage $Ns $file_input $HAcAmpCoef_input }
   stage_count $nStage
 }]
@@ -174,6 +176,6 @@ Schedule DataTable monitor_table step 2
 Schedule DataTable monitor_graph step 2
 #Schedule Oxs_StageZeeman:StageField1:Field monitor_disp1 step 2
 #Schedule Oxs_StageZeeman:StageField2:Field monitor_disp2 step 2
-Schedule YY_StageIsotropicMEL:StageField1:Field monitor_disp1 step 2
-Schedule YY_StageIsotropicMEL:StageField2:Field monitor_disp2 step 2
+Schedule YY_StageMEL:StageField1:Field monitor_disp1 step 2
+Schedule YY_StageMEL:StageField2:Field monitor_disp2 step 2
 #Schedule DataTable archive step 100

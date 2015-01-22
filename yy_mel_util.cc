@@ -29,14 +29,18 @@ void YY_MELField::Release()
   u.Release();
   diag.Release();
   offdiag.Release();
-  MELCoef.Release();
+  MELCoef1.Release();
+  MELCoef2.Release();
 }
 
 void YY_MELField::SetMELCoef(const Oxs_SimState& state,
-    const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef_init)
+    const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef1_init,
+    const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef2_init)
 {
-  MELCoef_init->FillMeshValue(state.mesh,MELCoef);
-  MELCoef_valid = 1;
+  MELCoef1_init->FillMeshValue(state.mesh,MELCoef1);
+  MELCoef2_init->FillMeshValue(state.mesh,MELCoef2);
+  MELCoef1_valid = 1;
+  MELCoef2_valid = 1;
 }
 
 void YY_MELField::SetDisplacement(const Oxs_SimState& state,
@@ -152,15 +156,19 @@ void YY_MELField::CalculateMELField(
   const OC_INDEX xydim = xdim*ydim;
 
   // Compute MEL field
+  Oxs_MeshValue<ThreeVector> temp_field;
+  temp_field.AdjustSize(mesh);
   for(OC_INDEX i=0; i<size; i++) {
     // field_buf[i]*diag[i] returns a dot product. Don't use it.
     field_buf[i].x  = spin[i].x*diag[i].x;
     field_buf[i].y  = spin[i].y*diag[i].y;
     field_buf[i].z  = spin[i].z*diag[i].z;
-    field_buf[i].x += spin[i].y*offdiag[i].z+spin[i].z*offdiag[i].y;
-    field_buf[i].y += spin[i].x*offdiag[i].z+spin[i].z*offdiag[i].x;
-    field_buf[i].z += spin[i].x*offdiag[i].y+spin[i].y*offdiag[i].x;
-    field_buf[i] *= -1/MU0*2*Msi[i]*MELCoef[i];
+    field_buf[i] *= -1/MU0*2*Msi[i]*MELCoef1[i];
+    temp_field[i].x = spin[i].y*offdiag[i].z+spin[i].z*offdiag[i].y;
+    temp_field[i].y = spin[i].x*offdiag[i].z+spin[i].z*offdiag[i].x;
+    temp_field[i].z = spin[i].x*offdiag[i].y+spin[i].y*offdiag[i].x;
+    temp_field[i] *= -1/MU0*2*Msi[i]*MELCoef2[i];
+    field_buf[i] += temp_field[i];
   }
   if(hmult != 1.0) field_buf *= hmult;
 

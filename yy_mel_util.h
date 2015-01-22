@@ -4,7 +4,7 @@
  * 
  */
 
-//#define YY_DEBUG
+#define YY_DEBUG
 #ifdef YY_DEBUG
 #define YY_DEBUGMSG(x) fprintf(stderr,x)
 #else
@@ -30,7 +30,7 @@
 /* End includes */
 class YY_MELField {
 private:
-  Oxs_MeshValue<OC_REAL8m> MELCoef;   // Isotropic MEL coefficient
+  Oxs_MeshValue<OC_REAL8m> MELCoef1, MELCoef2;   // MEL coefficients
 
   mutable Oxs_MeshValue<ThreeVector> u;       // Displacement
   mutable Oxs_MeshValue<ThreeVector> diag;    // Diagonal elements of strain
@@ -45,7 +45,7 @@ private:
   // offdiag.z = e_xy ([0][1])
 
   OC_BOOL strain_valid; // True if strain has been calculated
-  OC_BOOL MELCoef_valid;
+  OC_BOOL MELCoef1_valid, MELCoef2_valid;
 
   mutable ThreeVector max_field;
 
@@ -60,7 +60,8 @@ public:
   // with SetDisplacement, which calculates the strain from the displacement.
   void SetMELCoef(
       const Oxs_SimState& state,
-      const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef_init);
+      const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef1_init,
+      const Oxs_OwnedPointer<Oxs_ScalarField>& MELCoef2_init);
   void SetDisplacement(
       const Oxs_SimState& state,
       const Oxs_OwnedPointer<Oxs_VectorField>& u_init);
