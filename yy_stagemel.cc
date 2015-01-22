@@ -1,6 +1,8 @@
 /* FILE: yy_stagemel.cc                 -*-Mode: c++-*-
  *
- * Magnetoelastic energy
+ * OOMMF magnetoelastic coupling extension module.
+ * YY_StageMEL class.
+ * Calculates MEL field/energy for each stage.
  * 
  */
 
@@ -58,7 +60,7 @@ YY_StageMEL::YY_StageMEL(
     MELCoef2_init.SetAsOwner(dynamic_cast<Oxs_ScalarField *>
         (MakeNew("Oxs_UniformScalarField",director,"value 7.85e6")));
   }
-  
+
   // Initialize outputs.
   YY_DEBUGMSG("YY_StageMEL constructor initialize outputs.\n");
   B_MEL_output.Setup(this, InstanceName(), "B max", "mT", 1,

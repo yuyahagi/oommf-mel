@@ -1,6 +1,8 @@
 /* FILE: yy_stagemel.h                 -*-Mode: c++-*-
  *
- * Magnetoelastic energy
+ * OOMMF magnetoelastic coupling extension module.
+ * YY_StageMEL class.
+ * Calculates MEL field/energy for each stage.
  * 
  */
 
@@ -62,8 +64,6 @@ private:
   Oxs_ScalarOutput<YY_StageMEL> B_MELy_output;
   Oxs_ScalarOutput<YY_StageMEL> B_MELz_output;
   void Fill__B_MEL_output(const Oxs_SimState& state);
-
-  void CalculateMELField(const Oxs_SimState& state) const;
 
 protected:
   virtual void GetEnergy(const Oxs_SimState& state,
