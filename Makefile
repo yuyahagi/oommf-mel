@@ -6,6 +6,8 @@ OBJS = ../../darwin/$(subst .cc,.o,$(SRCS))
 LOCALDIR = ../../local
 OOMMFDIR = ../../../..
 TESTMIF = testdata/Hyz_02_run.mif
+TESTMIF_STEP = testdata/Hyz_02_run_step.mif
+TESTMIF_STEP_FILELIST = testdata/Hyz_02_run_step_filelist.mif
 
 CXXFLAGS =
 
@@ -36,6 +38,12 @@ clean:
 
 test:
 	$(OOMMF) oxsii $(TESTMIF)
+
+test_step:
+	$(OOMMF) oxsii $(TESTMIF_STEP)
+
+test_step_filelist:
+	$(OOMMF) oxsii $(TESTMIF_STEP_FILELIST)
 
 #-include Makefile.depend
 

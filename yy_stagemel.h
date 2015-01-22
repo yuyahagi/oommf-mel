@@ -30,6 +30,7 @@ private:
   // magnetoelastic coefficient MELCoef1,2 = B1,2 (J/m^3)
   Oxs_OwnedPointer<Oxs_ScalarField> MELCoef1_init, MELCoef2_init;
   mutable Oxs_OwnedPointer<Oxs_VectorField> displacement_init;
+  mutable Oxs_OwnedPointer<Oxs_VectorField> strain_diag_init, strain_offdiag_init;
 
   mutable YY_MELField MELField;
 
@@ -50,12 +51,16 @@ private:
   // the list of files method is used, otherwise cmd is
   // called with the stage number as the single appended
   // argument.
-  vector<String> filelist;
+  vector<String> u_filelist;
+  vector<String> e_diag_filelist, e_offdiag_filelist;
   Nb_TclCommand cmd;
 
+  OC_BOOL use_u, use_u_file_list;
+  // True if the displacement u is specified instead of the strain.
+  // You need to calculate the strain from u.
   // Cache update routines
+
   void ChangeDisplacementInitializer(OC_UINT4m stage, const Oxs_Mesh* mesh) const;
-  void FillDisplacementCache(const Oxs_SimState&) const;
   void UpdateCache(const Oxs_SimState& state) const;
 
   // Additional outputs

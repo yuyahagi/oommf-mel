@@ -41,11 +41,44 @@ YY_StageMEL::YY_StageMEL(
   // Process arguments
   hmult = GetRealInitValue("multiplier", 1.0);
 
+  // Select the way to specify strain (filelists or script?)
+  use_u_file_list = HasInitValue("u_files");
+
   // Script name
-  cmd.SetBaseCommand(InstanceName(),
-                     director->GetMifInterp(),
-                     GetStringInitValue("script"),1);
-  number_of_stages = GetUIntInitValue("stage_count",0);
+  if( use_u_file_list ) {
+    // Make certain list contains at least 1 file, because
+    // length of filelist is used as a flag to determine
+    // whether to call cmd or not.
+    GetGroupedStringListInitValue("u_files",u_filelist);
+    if(u_filelist.empty()) {
+      throw Oxs_ExtError(this,"\"u_files\" parameter value is empty."
+                           " At least one filename is required.");
+    }
+    // As a failsafe, set up a dummy command that generates
+    // a clear error message if in fact cmd is accidentally
+    // called.
+    String dummy_cmd =
+      "error \"Programming error; Oxs_StageZeeman script called"
+      " from u_filelist mode.\" ;# ";
+    cmd.SetBaseCommand(InstanceName(),
+                       director->GetMifInterp(),
+                       dummy_cmd,1);
+
+    number_of_stages 
+      = GetUIntInitValue("stage_count",
+                         static_cast<OC_UINT4m>(u_filelist.size()));
+    /// Default number_of_stages in this case is the length
+    /// of u_filelist.
+  } else {  // use u_script
+    cmd.SetBaseCommand(InstanceName(),
+                       director->GetMifInterp(),
+                       GetStringInitValue("u_script"),1);
+    // cmd takes one integer argument: the current stage.
+    // Return value should be a vector field spec.
+
+    number_of_stages = GetUIntInitValue("stage_count",0);
+    // Default value = 0, i.e., no preference.
+  }
 
   // Generate MELCoef initializer
   OXS_GET_INIT_EXT_OBJECT("B1",Oxs_ScalarField,MELCoef1_init);
@@ -102,24 +135,24 @@ void YY_StageMEL::ChangeDisplacementInitializer(
   YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): start.\n");
   // Setup displacement
   vector<String> params;
-  if(filelist.empty()) {
+  if(u_filelist.empty()) {
     // Use cmd to generate field initializer
-    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): filelist.empty.\n");
+    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): u_filelist.empty.\n");
     cmd.SaveInterpResult();
     cmd.SetCommandArg(0,stage);
     cmd.Eval();
     cmd.GetResultList(params);
     cmd.RestoreInterpResult();
   } else {
-    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): !filelist.empty.\n");
+    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): !u_filelist.empty.\n");
     // Construct field initializer using Oxs_FileVectorField
-    // with filename from filelist and range from mesh.
+    // with filename from u_filelist and range from mesh.
     OC_UINT4m index = stage;
-    OC_UINT4m filecount = static_cast<OC_UINT4m>(filelist.size());
+    OC_UINT4m filecount = static_cast<OC_UINT4m>(u_filelist.size());
     if(index >= filecount) index = filecount - 1;
     vector<String> options;
     options.push_back(String("file"));
-    options.push_back(filelist[index]);
+    options.push_back(u_filelist[index]);
 
     Oxs_Box bbox;    mesh->GetBoundingBox(bbox);
     char buf[64];
@@ -151,16 +184,6 @@ void YY_StageMEL::ChangeDisplacementInitializer(
   stage_valid = 1;
 }
 
-void
-YY_StageMEL::FillDisplacementCache(const Oxs_SimState& state) const
-{
-  const Oxs_Mesh* mesh = state.mesh;
-  // Displacement
-  YY_DEBUGMSG("YY_StageMEL::FillDisplacementCache(): FillMeshValue.\n");
-  MELField.SetDisplacement(state, displacement_init);
-
-}
-
 void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
 {
   // Update cache as necessary
@@ -170,18 +193,16 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeDisplacementInitializer(state.stage_number,state.mesh);
-    FillDisplacementCache(state);
+    MELField.SetDisplacement(state, displacement_init);
   } else if(working_stage != state.stage_number) {
     mesh_id = 0;
     YY_DEBUGMSG("YY_StageMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
     ChangeDisplacementInitializer(state.stage_number,state.mesh);
-    YY_DEBUGMSG("YY_StageMEL:UpdateCache(): FillDisplacementCache().\n");
-    FillDisplacementCache(state);
+    MELField.SetDisplacement(state, displacement_init);
     mesh_id = state.mesh->Id();
   } else if(mesh_id != state.mesh->Id()) {
     mesh_id = 0;
-    YY_DEBUGMSG("YY_StageMEL:UpdateCache(): in else, FillDisplacementCache().\n");
-    FillDisplacementCache(state);
+    MELField.SetDisplacement(state, displacement_init);
     mesh_id = state.mesh->Id();
   }
 }
