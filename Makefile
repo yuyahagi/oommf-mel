@@ -12,6 +12,8 @@ OOMMFDIR = ../../../..
 TESTMIF = testdata/Hyz_02_run.mif
 TESTMIF_STEP = testdata/Hyz_02_run_step.mif
 TESTMIF_STEP_FILELIST = testdata/Hyz_02_run_step_filelist.mif
+TESTMIF_STRAIN_STEP = testdata/Hyz_02_run_strain_step.mif
+TESTMIF_STRAIN_STEP_FILELIST = testdata/Hyz_02_run_strain_step_filelist.mif
 
 .SUFFIXES: .cc .h .o
 
@@ -37,6 +39,12 @@ test_step:
 
 test_step_filelist:
 	$(OOMMF) oxsii $(TESTMIF_STEP_FILELIST)
+
+test_strain_step:
+	$(OOMMF) oxsii $(TESTMIF_STRAIN_STEP)
+
+test_strain_step_filelist:
+	$(OOMMF) oxsii $(TESTMIF_STRAIN_STEP_FILELIST)
 
 # Dependency rule
 #-include Makefile.depend

@@ -21,8 +21,8 @@
 /* End includes */
 
 YY_MELField::YY_MELField():
-  strain_valid(0),
-  e_diag(NULL), e_offdiag(NULL)
+  displacement_valid(0), strain_valid(0), 
+  MELCoef1_valid(0), MELCoef2_valid(0)
 {
 }
 
@@ -53,6 +53,7 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   if(size<1) return;
 
   u_init->FillMeshValue(state.mesh,u);
+  displacement_valid = 1;
 
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
@@ -134,9 +135,15 @@ void YY_MELField::SetStrain(const Oxs_SimState& state,
     const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
     const Oxs_OwnedPointer<Oxs_VectorField>& e_offdiag_init)
 {
+  if(state.mesh->Size()<1) return;
+
   e_diag_init->FillMeshValue(state.mesh,e_diag);
   e_offdiag_init->FillMeshValue(state.mesh,e_offdiag);
   strain_valid = 1;
+
+#ifdef YY_DEBUG
+  DisplayValues(state,4,6,0,2,0,2);
+#endif
 }
 
 void YY_MELField::CalculateMELField(
@@ -230,47 +237,49 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // u.x
-  fprintf(stderr,"u.x:\n");
-  for(OC_INDEX y=ymin; y<ymax+1; y++) {
-    for(OC_INDEX z=zmin; z<zmax+1; z++) {
-      for(OC_INDEX x=xmin; x<xmax+1; x++) {
-        OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",u[i].x);
+  if(displacement_valid) {
+    // u.x
+    fprintf(stderr,"u.x:\n");
+    for(OC_INDEX y=ymin; y<ymax+1; y++) {
+      for(OC_INDEX z=zmin; z<zmax+1; z++) {
+        for(OC_INDEX x=xmin; x<xmax+1; x++) {
+          OC_INDEX i = mesh->Index(x,y,z);
+          fprintf(stderr,"%e ",u[i].x);
+        }
+        fprintf(stderr,"| ");
       }
-      fprintf(stderr,"| ");
+      fprintf(stderr,"\n");
     }
     fprintf(stderr,"\n");
-  }
-  fprintf(stderr,"\n");
 
-  // u.y
-  fprintf(stderr,"u.y:\n");
-  for(OC_INDEX y=ymin; y<ymax+1; y++) {
-    for(OC_INDEX z=zmin; z<zmax+1; z++) {
-      for(OC_INDEX x=xmin; x<xmax+1; x++) {
-        OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",u[i].y);
+    // u.y
+    fprintf(stderr,"u.y:\n");
+    for(OC_INDEX y=ymin; y<ymax+1; y++) {
+      for(OC_INDEX z=zmin; z<zmax+1; z++) {
+        for(OC_INDEX x=xmin; x<xmax+1; x++) {
+          OC_INDEX i = mesh->Index(x,y,z);
+          fprintf(stderr,"%e ",u[i].y);
+        }
+        fprintf(stderr,"| ");
       }
-      fprintf(stderr,"| ");
+      fprintf(stderr,"\n");
     }
     fprintf(stderr,"\n");
-  }
-  fprintf(stderr,"\n");
 
-  // u.z
-  fprintf(stderr,"u.z:\n");
-  for(OC_INDEX y=ymin; y<ymax+1; y++) {
-    for(OC_INDEX z=zmin; z<zmax+1; z++) {
-      for(OC_INDEX x=xmin; x<xmax+1; x++) {
-        OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",u[i].z);
+    // u.z
+    fprintf(stderr,"u.z:\n");
+    for(OC_INDEX y=ymin; y<ymax+1; y++) {
+      for(OC_INDEX z=zmin; z<zmax+1; z++) {
+        for(OC_INDEX x=xmin; x<xmax+1; x++) {
+          OC_INDEX i = mesh->Index(x,y,z);
+          fprintf(stderr,"%e ",u[i].z);
+        }
+        fprintf(stderr,"| ");
       }
-      fprintf(stderr,"| ");
+      fprintf(stderr,"\n");
     }
     fprintf(stderr,"\n");
   }
-  fprintf(stderr,"\n");
 
   // e_diag.x
   fprintf(stderr,"e_diag.x:\n");

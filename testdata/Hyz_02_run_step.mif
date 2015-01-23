@@ -20,7 +20,7 @@ set file_input  0
 set H_input 7000
 set HAcAmpCoef_input 1
 
-# For StageZeeman
+# For StageMEL
 set tSimulation 1e-9
 set tStage 0.2e-12
 set tSample 2e-12
@@ -106,7 +106,6 @@ proc StageFileField1 { tStage Ns file_input amp_coef stage } {
   set n [expr ($stage+$Ns-2) % $Ns]
   set coef [expr 1]
   set workname_Hstage [format "Ni_ellipse_sub12um_p212nm_pulse_b4.%06u.ovf" $file_number]
-  #set workname_Hstage [format "Hmel_M%02d.%06u.ohf" $file_input $file_number]
   set spec Oxs_FileVectorField
   lappend spec [subst {
     atlas :atlas
@@ -153,7 +152,5 @@ Destination archive mmArchive
 
 Schedule DataTable monitor_table step 2
 Schedule DataTable monitor_graph step 2
-#Schedule Oxs_StageZeeman:StageField1:Field monitor_disp1 step 2
-#Schedule Oxs_StageZeeman:StageField2:Field monitor_disp2 step 2
 Schedule YY_StageMEL:StageField1:Field monitor_disp1 step 2
 #Schedule DataTable archive step 100

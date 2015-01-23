@@ -8,7 +8,7 @@
 
 #define YY_DEBUG
 #ifdef YY_DEBUG
-#define YY_DEBUGMSG(x) fprintf(stderr,x)
+#define YY_DEBUGMSG(x) fprintf(stderr,(x))
 #else
 #define YY_DEBUGMSG(x) ;
 #endif
@@ -46,7 +46,8 @@ private:
   // offdiag.y = e_xz ([0][2])
   // offdiag.z = e_xy ([0][1])
 
-  OC_BOOL strain_valid; // True if strain has been calculated
+  OC_BOOL displacement_valid; // True if u has been calculated
+  OC_BOOL strain_valid;       // True if e has been calculated
   OC_BOOL MELCoef1_valid, MELCoef2_valid;
 
   mutable ThreeVector max_field;
@@ -80,13 +81,14 @@ public:
   ThreeVector GetMaxField() const
   { return max_field; };
 
+#ifdef YY_DEBUG
   // For debug. Display variables in specified range
   void DisplayValues(
       const Oxs_SimState& state,
       OC_INDEX xmin, OC_INDEX xmax,
       OC_INDEX ymin, OC_INDEX ymax,
       OC_INDEX zmin, OC_INDEX zmax) const;
-
+#endif
 };
 
 #endif // _YY_MEL_UTIL

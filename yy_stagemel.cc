@@ -18,12 +18,16 @@
 
 #include "yy_stagemel.h"
 
+#ifdef YY_DEBUG
+#include <iostream>
+#endif
+
 OC_USE_STRING;
+
+/* End includes */
 
 // Oxs_Ext registration support
 OXS_EXT_REGISTER(YY_StageMEL);
-
-/* End includes */
 
 // Constructor
 YY_StageMEL::YY_StageMEL(
@@ -142,8 +146,88 @@ void YY_StageMEL::ChangeDisplacementInitializer(
     params.push_back(Nb_MergeList(options));
   }
 
-  //YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): OXS_GET_EXT_OBJECT, displacement_init.\n");
-  OXS_GET_EXT_OBJECT(params,Oxs_VectorField,displacement_init);
+  OXS_GET_EXT_OBJECT(params,Oxs_VectorField,u_init);
+  working_stage = stage;
+  stage_valid = 1;
+}
+
+void YY_StageMEL::ChangeStrainInitializer(
+    OC_UINT4m stage, const Oxs_Mesh* mesh) const
+{
+  YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): start.\n");
+  // Setup strain
+  vector<String> params_diag, params_offdiag;
+  if( use_e_script ) {
+    // Use e_*diag_cmd to generate field initializer
+    YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): use_e_script.\n");
+    e_diag_cmd.SaveInterpResult();
+    e_diag_cmd.SetCommandArg(0,stage);
+    e_diag_cmd.Eval();
+    e_diag_cmd.GetResultList(params_diag);
+    e_diag_cmd.RestoreInterpResult();
+    e_offdiag_cmd.SaveInterpResult();
+    e_offdiag_cmd.SetCommandArg(0,stage);
+    e_offdiag_cmd.Eval();
+    e_offdiag_cmd.GetResultList(params_offdiag);
+    e_offdiag_cmd.RestoreInterpResult();
+  } else {  // use_e_filelist
+    YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): use_e_filelist.\n");
+    // Construct field initializer using Oxs_FileVectorField
+    // with filename from e_diag_filelist and range from mesh.
+    OC_UINT4m index = stage;
+    OC_UINT4m filecount = static_cast<OC_UINT4m>(e_diag_filelist.size());
+    if(index >= filecount) index = filecount - 1;
+    vector<String> options_diag, options_offdiag;
+    Oxs_Box bbox;    mesh->GetBoundingBox(bbox);
+    char buf[64];
+
+    // Diagonal elements
+    params_diag.push_back(String("Oxs_FileVectorField"));
+    options_diag.push_back(String("xrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinX()),
+                static_cast<double>(bbox.GetMaxX()));
+    options_diag.push_back(String(buf));
+    options_diag.push_back(String("yrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinY()),
+                static_cast<double>(bbox.GetMaxY()));
+    options_diag.push_back(String(buf));
+    options_diag.push_back(String("zrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinZ()),
+                static_cast<double>(bbox.GetMaxZ()));
+    options_diag.push_back(String(buf));
+    options_diag.push_back(String("file"));
+    options_diag.push_back(e_diag_filelist[index]);
+
+    params_diag.push_back(Nb_MergeList(options_diag));
+
+    // Off-diagonal elements
+    params_offdiag.push_back(String("Oxs_FileVectorField"));
+    options_offdiag.push_back(String("xrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinX()),
+                static_cast<double>(bbox.GetMaxX()));
+    options_offdiag.push_back(String(buf));
+    options_offdiag.push_back(String("yrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinY()),
+                static_cast<double>(bbox.GetMaxY()));
+    options_offdiag.push_back(String(buf));
+    options_offdiag.push_back(String("zrange"));
+    Oc_Snprintf(buf,sizeof(buf),"%.17g %.17g",
+                static_cast<double>(bbox.GetMinZ()),
+                static_cast<double>(bbox.GetMaxZ()));
+    options_offdiag.push_back(String(buf));
+    options_offdiag.push_back(String("file"));
+    options_offdiag.push_back(e_offdiag_filelist[index]);
+
+    params_offdiag.push_back(Nb_MergeList(options_offdiag));
+  }
+
+  OXS_GET_EXT_OBJECT(params_diag,Oxs_VectorField,e_diag_init);
+  OXS_GET_EXT_OBJECT(params_offdiag,Oxs_VectorField,e_offdiag_init);
   working_stage = stage;
   stage_valid = 1;
 }
@@ -156,17 +240,18 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
     YY_DEBUGMSG("YY_StageMEL:UpdateCache(): !stage_valide.\n");
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
-    ChangeDisplacementInitializer(state.stage_number,state.mesh);
-    MELField.SetDisplacement(state, displacement_init);
+    ChangeInitializer(state);
+    SetStrain(state);
   } else if(working_stage != state.stage_number) {
     mesh_id = 0;
     YY_DEBUGMSG("YY_StageMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
-    ChangeDisplacementInitializer(state.stage_number,state.mesh);
-    MELField.SetDisplacement(state, displacement_init);
+    ChangeInitializer(state);
+    SetStrain(state);
     mesh_id = state.mesh->Id();
   } else if(mesh_id != state.mesh->Id()) {
     mesh_id = 0;
-    MELField.SetDisplacement(state, displacement_init);
+    ChangeInitializer(state);
+    SetStrain(state);
     mesh_id = state.mesh->Id();
   }
 }
@@ -179,13 +264,10 @@ void YY_StageMEL::GetEnergy
   OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
-  YY_DEBUGMSG("YY_StageMEL::GetEnergy(): UpdateCache().\n");
   UpdateCache(state);
 
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
-
-  YY_DEBUGMSG("YY_StageMEL::GetEnergy(): Starting H_MEL calculation.\n");
 
   // Use supplied buffer space, and reflect that use in oed.
   oed.energy = oed.energy_buffer;
@@ -238,6 +320,24 @@ YY_StageMEL::Fill__B_MEL_output(const Oxs_SimState& state)
   }
 }
 
+void YY_StageMEL::ChangeInitializer(const Oxs_SimState& state) const
+{
+  if(use_u) { // Set displacement and let MELField calculate strain.
+    ChangeDisplacementInitializer(state.stage_number,state.mesh);
+  } else {    // use_e==true. Set strain directly.
+    ChangeStrainInitializer(state.stage_number,state.mesh);
+  }
+}
+
+void YY_StageMEL::SetStrain(const Oxs_SimState& state) const
+{
+  if(use_u) { // Set displacement and let MELField calculate strain.
+    MELField.SetDisplacement(state,u_init);
+  } else {    // use_e==true. Set strain directly.
+    MELField.SetStrain(state,e_diag_init,e_offdiag_init);
+  }
+}
+
 void YY_StageMEL::SelectElasticityInput()
 {
   // Sets several flags for elasticity input.
@@ -250,7 +350,7 @@ void YY_StageMEL::SelectElasticityInput()
   if(use_u) {
     YY_DEBUGMSG("use_u.\n");
     use_u_filelist = HasInitValue("u_files");
-    OC_BOOL use_u_script = HasInitValue("u_script");
+    use_u_script = HasInitValue("u_script");
     if( use_u_filelist && use_u_script ) {
       const char *cptr =
         "Select only one of u_script and u_files.";
@@ -287,6 +387,73 @@ void YY_StageMEL::SelectElasticityInput()
                          director->GetMifInterp(),
                          GetStringInitValue("u_script"),1);
       // u_cmd takes one integer argument: the current stage.
+      // Return value should be a vector field spec.
+
+      number_of_stages = GetUIntInitValue("stage_count",0);
+      // Default value = 0, i.e., no preference.
+    }
+  } else { // use_e
+    YY_DEBUGMSG("use_e.\n");
+    use_e_filelist = HasInitValue("e_diag_files") && HasInitValue("e_offdiag_files");
+    use_e_script = HasInitValue("e_diag_script") && HasInitValue("e_offdiag_script");
+    if( (use_e_filelist && use_e_script) || (!use_e_filelist && !use_e_script) ) {
+      // If both files and script are specified,
+      // or if neither is selected.
+      YY_DEBUGMSG("Flag error.\n");
+      const char *cptr =
+        "Select only one of e_*diag_script and e_*diag_files. You"
+        " need to specify both diagonal and off-diagonal elements.";
+      throw Oxs_ExtError(this,cptr);
+    }
+
+    // Script name
+    if(use_e_filelist) {
+      // Make certain list contains at least 1 file, because
+      // length of filelist is used as a flag to determine
+      // whether to call e_cmd or not.
+      GetGroupedStringListInitValue("e_diag_files",e_diag_filelist);
+      GetGroupedStringListInitValue("e_offdiag_files",e_offdiag_filelist);
+#ifdef YY_DEBUG
+      YY_DEBUGMSG("filelist sizes: ");
+      std::cerr << e_diag_filelist.size() << " " << e_offdiag_filelist.size()<<endl;
+#endif
+      if( e_diag_filelist.size() != e_offdiag_filelist.size() ) {
+        throw Oxs_ExtError(this,
+            "\"e_diag_files\" and \"e_offdiag_files\" must be at"
+            " the same length.");
+      }
+      if( e_diag_filelist.empty() || e_offdiag_filelist.empty() ) {
+        throw Oxs_ExtError(this,
+            "\"e_diag_files\" or \"e_offdiag_files\" parameter"
+            " value is empty. At least one filename for each is"
+            " required.");
+      }
+      // As a failsafe, set up a dummy command that generates
+      // a clear error message if in fact e_cmd is accidentally
+      // called.
+      String dummy_cmd =
+        "error \"Programming error; Oxs_StageZeeman script called"
+        " from e_filelist mode.\" ;# ";
+      e_diag_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         dummy_cmd,1);
+      e_offdiag_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         dummy_cmd,1);
+
+      number_of_stages 
+        = GetUIntInitValue("stage_count",
+                           static_cast<OC_UINT4m>(e_diag_filelist.size()));
+      /// Default number_of_stages in this case is the length
+      /// of e_diag_filelist.
+    } else {  // use a script for strain
+      e_diag_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         GetStringInitValue("e_diag_script"),1);
+      e_offdiag_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         GetStringInitValue("e_offdiag_script"),1);
+      // e_*diag_cmd take one integer argument: the current stage.
       // Return value should be a vector field spec.
 
       number_of_stages = GetUIntInitValue("stage_count",0);
