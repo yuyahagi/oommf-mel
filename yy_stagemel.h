@@ -53,12 +53,20 @@ private:
   // argument.
   vector<String> u_filelist;
   vector<String> e_diag_filelist, e_offdiag_filelist;
-  Nb_TclCommand cmd;
+  Nb_TclCommand u_cmd, e_diag_cmd, e_offdiag_cmd;
 
-  OC_BOOL use_u, use_u_file_list;
   // True if the displacement u is specified instead of the strain.
   // You need to calculate the strain from u.
   // Cache update routines
+  OC_BOOL use_u, use_u_filelist;
+
+  // Member function to determine the way of specifying
+  // strain. Whether directly using strain or indirectly by
+  // specifying displacement and calculating strain with it.
+  // Also determines whether filelists or scripts are used.
+  // It sets use_u and use_e (== !use_u) and use_u_filelist
+  // or use_e_filelist depending on use_u.
+  void SelectElasticityInput();
 
   void ChangeDisplacementInitializer(OC_UINT4m stage, const Oxs_Mesh* mesh) const;
   void UpdateCache(const Oxs_SimState& state) const;

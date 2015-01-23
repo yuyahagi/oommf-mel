@@ -41,48 +41,12 @@ YY_StageMEL::YY_StageMEL(
   // Process arguments
   hmult = GetRealInitValue("multiplier", 1.0);
 
-  // Select the way to specify strain (filelists or script?)
-  use_u_file_list = HasInitValue("u_files");
-
-  // Script name
-  if( use_u_file_list ) {
-    // Make certain list contains at least 1 file, because
-    // length of filelist is used as a flag to determine
-    // whether to call cmd or not.
-    GetGroupedStringListInitValue("u_files",u_filelist);
-    if(u_filelist.empty()) {
-      throw Oxs_ExtError(this,"\"u_files\" parameter value is empty."
-                           " At least one filename is required.");
-    }
-    // As a failsafe, set up a dummy command that generates
-    // a clear error message if in fact cmd is accidentally
-    // called.
-    String dummy_cmd =
-      "error \"Programming error; Oxs_StageZeeman script called"
-      " from u_filelist mode.\" ;# ";
-    cmd.SetBaseCommand(InstanceName(),
-                       director->GetMifInterp(),
-                       dummy_cmd,1);
-
-    number_of_stages 
-      = GetUIntInitValue("stage_count",
-                         static_cast<OC_UINT4m>(u_filelist.size()));
-    /// Default number_of_stages in this case is the length
-    /// of u_filelist.
-  } else {  // use u_script
-    cmd.SetBaseCommand(InstanceName(),
-                       director->GetMifInterp(),
-                       GetStringInitValue("u_script"),1);
-    // cmd takes one integer argument: the current stage.
-    // Return value should be a vector field spec.
-
-    number_of_stages = GetUIntInitValue("stage_count",0);
-    // Default value = 0, i.e., no preference.
-  }
-
   // Generate MELCoef initializer
   OXS_GET_INIT_EXT_OBJECT("B1",Oxs_ScalarField,MELCoef1_init);
   OXS_GET_INIT_EXT_OBJECT("B2",Oxs_ScalarField,MELCoef2_init);
+
+  // set use_u_filelist or use_e_filelist
+  SelectElasticityInput();
 
   // Initialize outputs.
   YY_DEBUGMSG("YY_StageMEL constructor initialize outputs.\n");
@@ -136,13 +100,13 @@ void YY_StageMEL::ChangeDisplacementInitializer(
   // Setup displacement
   vector<String> params;
   if(u_filelist.empty()) {
-    // Use cmd to generate field initializer
+    // Use u_cmd to generate field initializer
     YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): u_filelist.empty.\n");
-    cmd.SaveInterpResult();
-    cmd.SetCommandArg(0,stage);
-    cmd.Eval();
-    cmd.GetResultList(params);
-    cmd.RestoreInterpResult();
+    u_cmd.SaveInterpResult();
+    u_cmd.SetCommandArg(0,stage);
+    u_cmd.Eval();
+    u_cmd.GetResultList(params);
+    u_cmd.RestoreInterpResult();
   } else {
     YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): !u_filelist.empty.\n");
     // Construct field initializer using Oxs_FileVectorField
@@ -274,3 +238,62 @@ YY_StageMEL::Fill__B_MEL_output(const Oxs_SimState& state)
   }
 }
 
+void YY_StageMEL::SelectElasticityInput()
+{
+  // Sets several flags for elasticity input.
+  // Whether you use displacement or strain
+  use_u = HasInitValue("u_script") || HasInitValue("u_files");
+
+  // ======================================================================
+  // Whether filelist(s) or script(s)
+  // ======================================================================
+  if(use_u) {
+    YY_DEBUGMSG("use_u.\n");
+    use_u_filelist = HasInitValue("u_files");
+    OC_BOOL use_u_script = HasInitValue("u_script");
+    if( use_u_filelist && use_u_script ) {
+      const char *cptr =
+        "Select only one of u_script and u_files.";
+      throw Oxs_ExtError(this,cptr);
+    }
+
+    // Script name
+    if( use_u_filelist ) {
+      // Make certain list contains at least 1 file, because
+      // length of filelist is used as a flag to determine
+      // whether to call u_cmd or not.
+      GetGroupedStringListInitValue("u_files",u_filelist);
+      if(u_filelist.empty()) {
+        throw Oxs_ExtError(this,"\"u_files\" parameter value is empty."
+                             " At least one filename is required.");
+      }
+      // As a failsafe, set up a dummy command that generates
+      // a clear error message if in fact u_cmd is accidentally
+      // called.
+      String dummy_cmd =
+        "error \"Programming error; Oxs_StageZeeman script called"
+        " from u_filelist mode.\" ;# ";
+      u_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         dummy_cmd,1);
+
+      number_of_stages 
+        = GetUIntInitValue("stage_count",
+                           static_cast<OC_UINT4m>(u_filelist.size()));
+      /// Default number_of_stages in this case is the length
+      /// of u_filelist.
+    } else {  // use u_script
+      u_cmd.SetBaseCommand(InstanceName(),
+                         director->GetMifInterp(),
+                         GetStringInitValue("u_script"),1);
+      // u_cmd takes one integer argument: the current stage.
+      // Return value should be a vector field spec.
+
+      number_of_stages = GetUIntInitValue("stage_count",0);
+      // Default value = 0, i.e., no preference.
+    }
+  }
+  // ======================================================================
+  // END: Whether filelist(s) or script(s)
+  // ======================================================================
+}
