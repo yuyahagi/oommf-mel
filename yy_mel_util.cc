@@ -22,15 +22,15 @@
 
 YY_MELField::YY_MELField():
   strain_valid(0),
-  diag(NULL), offdiag(NULL)
+  e_diag(NULL), e_offdiag(NULL)
 {
 }
 
 void YY_MELField::Release()
 {
   u.Release();
-  diag.Release();
-  offdiag.Release();
+  e_diag.Release();
+  e_offdiag.Release();
   MELCoef1.Release();
   MELCoef2.Release();
 }
@@ -66,8 +66,8 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   const OC_REAL8m idely = 1./mesh->EdgeLengthX();
   const OC_REAL8m idelz = 1./mesh->EdgeLengthX();
 
-  diag.AdjustSize(mesh);
-  offdiag.AdjustSize(mesh);
+  e_diag.AdjustSize(mesh);
+  e_offdiag.AdjustSize(mesh);
 
   // Compute du/dx
   for(OC_INDEX z=0; z<zdim; z++) {
@@ -78,8 +78,8 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
         ThreeVector du_dy;
         ThreeVector du_dz;
         if(Ms[i]==0.0) {
-          diag[i].Set(0.0, 0.0, 0.0);
-          offdiag[i].Set(0.0, 0.0, 0.0);
+          e_diag[i].Set(0.0, 0.0, 0.0);
+          e_offdiag[i].Set(0.0, 0.0, 0.0);
           continue;
         }
 
@@ -110,8 +110,8 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
         else
           du_dz *= idelz;
 
-        diag[i].Set(du_dx.x,du_dy.y,du_dz.z);
-        offdiag[i].Set(
+        e_diag[i].Set(du_dx.x,du_dy.y,du_dz.z);
+        e_offdiag[i].Set(
           0.5*(du_dz.y+du_dy.z),
           0.5*(du_dx.z+du_dz.x),
           0.5*(du_dy.x+du_dx.y)
@@ -131,11 +131,11 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
 }
 
 void YY_MELField::SetStrain(const Oxs_SimState& state,
-    const Oxs_OwnedPointer<Oxs_VectorField>& diag_init,
-    const Oxs_OwnedPointer<Oxs_VectorField>& offdiag_init)
+    const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
+    const Oxs_OwnedPointer<Oxs_VectorField>& e_offdiag_init)
 {
-  diag_init->FillMeshValue(state.mesh,diag);
-  offdiag_init->FillMeshValue(state.mesh,offdiag);
+  e_diag_init->FillMeshValue(state.mesh,e_diag);
+  e_offdiag_init->FillMeshValue(state.mesh,e_offdiag);
   strain_valid = 1;
 }
 
@@ -161,14 +161,14 @@ void YY_MELField::CalculateMELField(
   Oxs_MeshValue<ThreeVector> temp_field;
   temp_field.AdjustSize(mesh);
   for(OC_INDEX i=0; i<size; i++) {
-    // field_buf[i]*diag[i] returns a dot product. Don't use it.
-    field_buf[i].x  = spin[i].x*diag[i].x;
-    field_buf[i].y  = spin[i].y*diag[i].y;
-    field_buf[i].z  = spin[i].z*diag[i].z;
+    // field_buf[i]*e_diag[i] returns a dot product. Don't use it.
+    field_buf[i].x  = spin[i].x*e_diag[i].x;
+    field_buf[i].y  = spin[i].y*e_diag[i].y;
+    field_buf[i].z  = spin[i].z*e_diag[i].z;
     field_buf[i] *= -1/MU0*2*Msi[i]*MELCoef1[i];
-    temp_field[i].x = spin[i].y*offdiag[i].z+spin[i].z*offdiag[i].y;
-    temp_field[i].y = spin[i].x*offdiag[i].z+spin[i].z*offdiag[i].x;
-    temp_field[i].z = spin[i].x*offdiag[i].y+spin[i].y*offdiag[i].x;
+    temp_field[i].x = spin[i].y*e_offdiag[i].z+spin[i].z*e_offdiag[i].y;
+    temp_field[i].y = spin[i].x*e_offdiag[i].z+spin[i].z*e_offdiag[i].x;
+    temp_field[i].z = spin[i].x*e_offdiag[i].y+spin[i].y*e_offdiag[i].x;
     temp_field[i] *= -1/MU0*2*Msi[i]*MELCoef2[i];
     field_buf[i] += temp_field[i];
   }
@@ -272,13 +272,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // diag.x
-  fprintf(stderr,"diag.x:\n");
+  // e_diag.x
+  fprintf(stderr,"e_diag.x:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",diag[i].x);
+        fprintf(stderr,"%e ",e_diag[i].x);
       }
       fprintf(stderr,"| ");
     }
@@ -286,13 +286,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // diag.y
-  fprintf(stderr,"diag.y:\n");
+  // e_diag.y
+  fprintf(stderr,"e_diag.y:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",diag[i].y);
+        fprintf(stderr,"%e ",e_diag[i].y);
       }
       fprintf(stderr,"| ");
     }
@@ -300,13 +300,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // diag.z
-  fprintf(stderr,"diag.z:\n");
+  // e_diag.z
+  fprintf(stderr,"e_diag.z:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",diag[i].z);
+        fprintf(stderr,"%e ",e_diag[i].z);
       }
       fprintf(stderr,"| ");
     }
@@ -314,13 +314,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // offdiag.x
-  fprintf(stderr,"offdiag.x:\n");
+  // e_offdiag.x
+  fprintf(stderr,"e_offdiag.x:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",offdiag[i].x);
+        fprintf(stderr,"%e ",e_offdiag[i].x);
       }
       fprintf(stderr,"| ");
     }
@@ -328,13 +328,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // offdiag.y
-  fprintf(stderr,"offdiag.y:\n");
+  // e_offdiag.y
+  fprintf(stderr,"e_offdiag.y:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",offdiag[i].y);
+        fprintf(stderr,"%e ",e_offdiag[i].y);
       }
       fprintf(stderr,"| ");
     }
@@ -342,13 +342,13 @@ void YY_MELField::DisplayValues(
   }
   fprintf(stderr,"\n");
 
-  // offdiag.z
-  fprintf(stderr,"offdiag.z:\n");
+  // e_offdiag.z
+  fprintf(stderr,"e_offdiag.z:\n");
   for(OC_INDEX y=ymin; y<ymax+1; y++) {
     for(OC_INDEX z=zmin; z<zmax+1; z++) {
       for(OC_INDEX x=xmin; x<xmax+1; x++) {
         OC_INDEX i = mesh->Index(x,y,z);
-        fprintf(stderr,"%e ",offdiag[i].z);
+        fprintf(stderr,"%e ",e_offdiag[i].z);
       }
       fprintf(stderr,"| ");
     }

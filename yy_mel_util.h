@@ -35,8 +35,8 @@ private:
   Oxs_MeshValue<OC_REAL8m> MELCoef1, MELCoef2;   // MEL coefficients
 
   mutable Oxs_MeshValue<ThreeVector> u;       // Displacement
-  mutable Oxs_MeshValue<ThreeVector> diag;    // Diagonal elements of strain
-  mutable Oxs_MeshValue<ThreeVector> offdiag; // Off-diagonal elements
+  mutable Oxs_MeshValue<ThreeVector> e_diag;    // Diagonal elements of strain
+  mutable Oxs_MeshValue<ThreeVector> e_offdiag; // Off-diagonal elements
   // in abbreviated suffix notation
   //  Strain      Diagonal   Off-diagonal
   // / 0 5 4 \   / 0     \   /   2 1 \
@@ -69,8 +69,8 @@ public:
       const Oxs_OwnedPointer<Oxs_VectorField>& u_init);
   void SetStrain(
       const Oxs_SimState& state,
-      const Oxs_OwnedPointer<Oxs_VectorField>& diag_init,
-      const Oxs_OwnedPointer<Oxs_VectorField>& offdiag_init);
+      const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
+      const Oxs_OwnedPointer<Oxs_VectorField>& e_offdiag_init);
 
   void CalculateMELField(
     const Oxs_SimState& state,
