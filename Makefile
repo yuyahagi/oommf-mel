@@ -15,6 +15,10 @@ TESTMIF_STEP_FILELIST = testdata/Hyz_02_run_step_filelist.mif
 TESTMIF_STRAIN_STEP = testdata/Hyz_02_run_strain_step.mif
 TESTMIF_STRAIN_STEP_FILELIST = testdata/Hyz_02_run_strain_step_filelist.mif
 
+TESTMIF_FIXED = testdata/Hyz_02_run_fixed.mif
+TESTMIF_FIXED_STAGEMEL = testdata/Hyz_02_run_fixed_stagemel.mif
+TESTMIF_FIXED_STRAIN = testdata/Hyz_02_run_fixed_strain.mif
+
 .SUFFIXES: .cc .h .o
 
 RM = rm
@@ -45,6 +49,15 @@ test_strain_step:
 
 test_strain_step_filelist:
 	$(OOMMF) oxsii $(TESTMIF_STRAIN_STEP_FILELIST)
+
+test_fixed:
+	$(OOMMF) oxsii $(TESTMIF_FIXED)
+
+test_fixed_stagemel:
+	$(OOMMF) oxsii $(TESTMIF_FIXED_STAGEMEL)
+
+test_fixed_strain:
+	$(OOMMF) oxsii $(TESTMIF_FIXED_STRAIN)
 
 # Dependency rule
 #-include Makefile.depend
