@@ -50,7 +50,7 @@ YY_StageMEL::YY_StageMEL(
   OXS_GET_INIT_EXT_OBJECT("B2",Oxs_ScalarField,MELCoef2_init);
 
   // set use_u_filelist or use_e_filelist
-  SelectElasticityInput();
+  SelectElasticityInputType();
 
   // Initialize outputs.
   YY_DEBUGMSG("YY_StageMEL constructor initialize outputs.\n");
@@ -338,7 +338,7 @@ void YY_StageMEL::SetStrain(const Oxs_SimState& state) const
   }
 }
 
-void YY_StageMEL::SelectElasticityInput()
+void YY_StageMEL::SelectElasticityInputType()
 {
   // Sets several flags for elasticity input.
   // Whether you use displacement or strain

@@ -67,7 +67,7 @@ private:
   // Also determines whether filelists or scripts are used.
   // It sets use_u and use_e (== !use_u) and use_u_filelist
   // or use_e_filelist depending on use_u.
-  void SelectElasticityInput();
+  void SelectElasticityInputType();
 
   // Update the initializers for displacement or strain. ChangeInitializer()
   // checks use_u flag, calls either one of ChangeDisplacementInitializer()
