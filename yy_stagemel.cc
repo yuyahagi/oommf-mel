@@ -277,14 +277,8 @@ void YY_StageMEL::GetEnergy
   energy.AdjustSize(state.mesh);
   field.AdjustSize(state.mesh);
 
-  MELField.CalculateMELField(state, hmult, field);
+  MELField.CalculateMELField(state, hmult, field, energy);
   max_field = MELField.GetMaxField();
-
-  // Calculate pointwise energy density -0.5*MU0*<M,Hmel>
-  for(OC_INDEX i=0; i<size; i++) {
-    energy[i] = -0.5 * MU0 * Ms[i] * (spin[i]*field[i]);
-  }
-
 }
 
 void

@@ -98,18 +98,11 @@ void YY_FixedMEL::GetEnergy
   Oxs_MeshValue<ThreeVector>& field = *oed.field_buffer;
 
   YY_DEBUGMSG("YY_FixedMEL: Calculate MEL field.\n");
-  MELField.CalculateMELField(state, field_mult, field);
+  MELField.CalculateMELField(state, field_mult, field, energy);
   max_field = MELField.GetMaxField();
 
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
-
-  YY_DEBUGMSG("YY_FixedMEL: Calculate energy density.\n");
-  // Calculate pointwise energy density -0.5*MU0*<M,Hmel>
-  for(OC_INDEX i=0; i<size; i++) {
-    energy[i] = -0.5 * MU0 * Ms[i] * (spin[i]*field[i]);
-  }
-
 }
 
 void YY_FixedMEL::SelectElasticityInputType()

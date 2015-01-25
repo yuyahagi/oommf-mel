@@ -42,9 +42,9 @@ private:
   // / 0 5 4 \   / 0     \   /   2 1 \
   // | . 1 3 | = |   1   | + |     0 |
   // \ . . 2 /   \     2 /   \       /
-  // offdiag.x = e_yz ([1][2])
-  // offdiag.y = e_xz ([0][2])
-  // offdiag.z = e_xy ([0][1])
+  // e.offdiag.x = e_yz ([1][2])
+  // e.offdiag.y = e_xz ([0][2])
+  // e.offdiag.z = e_xy ([0][1])
 
   OC_BOOL displacement_valid; // True if u has been calculated
   OC_BOOL strain_valid;       // True if e has been calculated
@@ -68,6 +68,7 @@ public:
   void SetDisplacement(
       const Oxs_SimState& state,
       const Oxs_OwnedPointer<Oxs_VectorField>& u_init);
+  void CalculateStrain(const Oxs_SimState& state);
   void SetStrain(
       const Oxs_SimState& state,
       const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
@@ -76,7 +77,8 @@ public:
   void CalculateMELField(
     const Oxs_SimState& state,
     OC_REAL8m hmult,
-    Oxs_MeshValue<ThreeVector>& field_buf) const;
+    Oxs_MeshValue<ThreeVector>& field_buf,
+    Oxs_MeshValue<OC_REAL8m>& energy_buf) const;
 
   ThreeVector GetMaxField() const
   { return max_field; };

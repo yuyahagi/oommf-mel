@@ -149,7 +149,8 @@ void YY_MELField::SetStrain(const Oxs_SimState& state,
 void YY_MELField::CalculateMELField(
   const Oxs_SimState& state,
   OC_REAL8m hmult,
-  Oxs_MeshValue<ThreeVector>& field_buf) const
+  Oxs_MeshValue<ThreeVector>& field_buf,
+  Oxs_MeshValue<OC_REAL8m>& energy_buf) const
 {
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
@@ -164,7 +165,7 @@ void YY_MELField::CalculateMELField(
   const OC_INDEX zdim = mesh->DimX();
   const OC_INDEX xydim = xdim*ydim;
 
-  // Compute MEL field
+  // Compute MEL field and energy
   Oxs_MeshValue<ThreeVector> temp_field;
   temp_field.AdjustSize(mesh);
   for(OC_INDEX i=0; i<size; i++) {
@@ -196,6 +197,10 @@ void YY_MELField::CalculateMELField(
     max_field = field_buf[max_i];
   }
 
+  // Energy density
+  for(OC_INDEX i=0; i<size; i++) {
+    energy_buf[i] = (-0.5*MU0*Ms[i])*(field_buf[i]*spin[i]);
+  }
 }
 
 #ifdef YY_DEBUG
