@@ -34,10 +34,18 @@ class YY_MELField {
 private:
   Oxs_MeshValue<OC_REAL8m> MELCoef1, MELCoef2;   // MEL coefficients
 
-  mutable Oxs_MeshValue<ThreeVector> u;       // Displacement
-  mutable Oxs_MeshValue<ThreeVector> e_diag;    // Diagonal elements of strain
-  mutable Oxs_MeshValue<ThreeVector> e_offdiag; // Off-diagonal elements
-  // in abbreviated suffix notation
+  // Displacement u and strain e.
+  // Displacement
+  mutable Oxs_MeshValue<ThreeVector> u, u_cache;
+  // Diagonal elements of strain
+  mutable Oxs_MeshValue<ThreeVector> e_diag, e_diag_cache;
+  // Off-diagonal elements
+  mutable Oxs_MeshValue<ThreeVector> e_offdiag, e_offdiag_cache;
+  // The *_cache stores the displacement/strain when they are
+  // updated at each stage. When TransformDisplacement() or
+  // TransformStrain() is called, transformed values are stored
+  // in u or e_*diag and are used for MEL field calculation.
+  // Strain is expressed with abbreviated suffix notation
   //  Strain      Diagonal   Off-diagonal
   // / 0 5 4 \   / 0     \   /   2 1 \
   // | . 1 3 | = |   1   | + |     0 |
@@ -46,8 +54,8 @@ private:
   // e.offdiag.y = e_xz ([0][2])
   // e.offdiag.z = e_xy ([0][1])
 
-  OC_BOOL displacement_valid; // True if u has been calculated
-  OC_BOOL strain_valid;       // True if e has been calculated
+  OC_BOOL displacement_valid; // True if u_cache has been calculated
+  OC_BOOL strain_valid;       // True if e_*diag_cache has been calculated
   OC_BOOL MELCoef1_valid, MELCoef2_valid;
 
   mutable ThreeVector max_field;

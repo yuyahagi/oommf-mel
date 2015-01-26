@@ -28,6 +28,9 @@ YY_MELField::YY_MELField():
 
 void YY_MELField::Release()
 {
+  u_cache.Release();
+  e_diag_cache.Release();
+  e_offdiag_cache.Release();
   u.Release();
   e_diag.Release();
   e_offdiag.Release();
@@ -52,10 +55,15 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
-  u_init->FillMeshValue(state.mesh,u);
+  u_init->FillMeshValue(state.mesh,u_cache);
+  u = u_cache;
   displacement_valid = 1;
 
   CalculateStrain(state);
+  // Update the strain cache.
+  e_diag_cache = e_diag;
+  e_offdiag_cache = e_offdiag;
+  strain_valid = 1;
 
   // For debug, display values
   // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
@@ -71,8 +79,11 @@ void YY_MELField::SetStrain(const Oxs_SimState& state,
 {
   if(state.mesh->Size()<1) return;
 
-  e_diag_init->FillMeshValue(state.mesh,e_diag);
-  e_offdiag_init->FillMeshValue(state.mesh,e_offdiag);
+  e_diag_init->FillMeshValue(state.mesh,e_diag_cache);
+  e_offdiag_init->FillMeshValue(state.mesh,e_offdiag_cache);
+  e_diag = e_diag_cache;
+  e_offdiag=e_offdiag_cache;
+  displacement_valid = 0;
   strain_valid = 1;
 
 #ifdef YY_DEBUG
@@ -144,13 +155,9 @@ void YY_MELField::CalculateStrain(const Oxs_SimState& state)
           0.5*(du_dx.z+du_dz.x),
           0.5*(du_dy.x+du_dx.y)
         );
-        e_diag[i]=e_diag[i];
-        e_offdiag[i]=e_offdiag[i];
       }
     }
   }
-
-  strain_valid = 1;
 }
 
 
