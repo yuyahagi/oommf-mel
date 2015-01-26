@@ -55,6 +55,33 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   u_init->FillMeshValue(state.mesh,u);
   displacement_valid = 1;
 
+  CalculateStrain(state);
+
+  // For debug, display values
+  // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
+#ifdef YY_DEBUG
+  DisplayValues(state,4,6,0,2,0,2);
+#endif
+
+}
+
+void YY_MELField::SetStrain(const Oxs_SimState& state,
+    const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
+    const Oxs_OwnedPointer<Oxs_VectorField>& e_offdiag_init)
+{
+  if(state.mesh->Size()<1) return;
+
+  e_diag_init->FillMeshValue(state.mesh,e_diag);
+  e_offdiag_init->FillMeshValue(state.mesh,e_offdiag);
+  strain_valid = 1;
+
+#ifdef YY_DEBUG
+  DisplayValues(state,4,6,0,2,0,2);
+#endif
+}
+
+void YY_MELField::CalculateStrain(const Oxs_SimState& state)
+{
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
   const Oxs_MeshValue<ThreeVector>& spin = state.spin;
   const Oxs_RectangularMesh* mesh =
@@ -117,34 +144,15 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
           0.5*(du_dx.z+du_dz.x),
           0.5*(du_dy.x+du_dx.y)
         );
+        e_diag[i]=e_diag[i];
+        e_offdiag[i]=e_offdiag[i];
       }
     }
   }
 
   strain_valid = 1;
-
-  // For debug, display values
-  // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
-#ifdef YY_DEBUG
-  DisplayValues(state,4,6,0,2,0,2);
-#endif
-
 }
 
-void YY_MELField::SetStrain(const Oxs_SimState& state,
-    const Oxs_OwnedPointer<Oxs_VectorField>& e_diag_init,
-    const Oxs_OwnedPointer<Oxs_VectorField>& e_offdiag_init)
-{
-  if(state.mesh->Size()<1) return;
-
-  e_diag_init->FillMeshValue(state.mesh,e_diag);
-  e_offdiag_init->FillMeshValue(state.mesh,e_offdiag);
-  strain_valid = 1;
-
-#ifdef YY_DEBUG
-  DisplayValues(state,4,6,0,2,0,2);
-#endif
-}
 
 void YY_MELField::CalculateMELField(
   const Oxs_SimState& state,
