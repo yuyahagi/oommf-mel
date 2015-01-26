@@ -250,7 +250,6 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
     mesh_id = state.mesh->Id();
   } else if(mesh_id != state.mesh->Id()) {
     mesh_id = 0;
-    ChangeInitializer(state);
     SetStrain(state);
     mesh_id = state.mesh->Id();
   }
