@@ -39,11 +39,6 @@ private:
   OC_REAL8m hmult;  // multiplier
   OC_UINT4m number_of_stages;
 
-  void GetAppliedField
-  (const Oxs_SimState& state,
-   ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
-   ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3) const;
-
   enum TransformType { identity, diagonal, symmetric, general };
   TransformType transform_type;
 

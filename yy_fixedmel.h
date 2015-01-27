@@ -34,11 +34,6 @@ private:
   Oxs_OwnedPointer<Oxs_VectorField> fixedu_init;          // displacement
   Oxs_OwnedPointer<Oxs_VectorField> fixede_diag_init;     // strain diagonal
   Oxs_OwnedPointer<Oxs_VectorField> fixede_offdiag_init;  // strain offdiagonal
-  mutable Oxs_MeshValue<ThreeVector> fixedu;
-  mutable Oxs_MeshValue<ThreeVector> fixede_diag, fixede_offdiag;
-  /// fixed* is a cached value filled by
-  /// fixed*_init when a change in mesh is
-  /// detected.
   mutable ThreeVector max_field;
 
   // Member function to determine the way of specifying
