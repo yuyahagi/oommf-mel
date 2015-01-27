@@ -3,6 +3,8 @@
  * OOMMF magnetoelastic coupling extension module.
  * yy_mel_util.* contain YY_MELField class , which is to be used by other
  * YY_*MEL classes
+ *
+ * Last updated on 2015-01-27 by Yu Yahagi
  * 
  */
 
@@ -75,12 +77,9 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
   e_offdiag_cache = e_offdiag;
   strain_valid = 1;
 
-  // For debug, display values
-  // arguments: state, xmin, xmax, ymin, ymax, zmin, zmax
 #ifdef YY_DEBUG
   DisplayValues(state,4,6,0,2,0,2);
 #endif
-
 }
 
 void YY_MELField::SetStrain(const Oxs_SimState& state,
@@ -129,6 +128,8 @@ void YY_MELField::CalculateStrain(const Oxs_SimState& state)
   de_offdiag.AdjustSize(mesh);
 
   // Compute du/dx
+  // The following calculation assumes that the displacement is only
+  // defined in the region where Ms != 0.
   for(OC_INDEX z=0; z<zdim; z++) {
     for(OC_INDEX y=0; y<ydim; y++) {
       for(OC_INDEX x=0; x<xdim; x++) {
@@ -196,12 +197,10 @@ void YY_MELField::TransformDisplacement(
     ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
     ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3)
 {
-  YY_DEBUGMSG("YY_MELField::TransformDisplacement(). Start.\n");
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
   if(!displacement_valid) return;
 
-  YY_DEBUGMSG("YY_MELField::TransformDisplacement(). Apply T matrix.\n");
   for(OC_INDEX i=0; i<size; i++) {
     const ThreeVector& v = u_cache[i];
     u[i].Set(row1*v,row2*v,row3*v);
@@ -210,17 +209,17 @@ void YY_MELField::TransformDisplacement(
   CalculateStrain(state);
 
 #ifdef YY_DEBUG
-  std::cerr<<"displacement u_cache, u, du/dt"<<endl;
-  std::cerr<<u_cache[20].x<<"  "<<u[20].x<<"  "<<du[20].x<<endl;
-  std::cerr<<u_cache[20].y<<"  "<<u[20].y<<"  "<<du[20].y<<endl;
-  std::cerr<<u_cache[20].z<<"  "<<u[20].z<<"  "<<du[20].z<<endl;
-  std::cerr<<"strain, de/dt"<<endl;
-  std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
-  std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
-  std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
-  std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
-  std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
-  std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
+  //std::cerr<<"displacement u_cache, u, du/dt"<<endl;
+  //std::cerr<<u_cache[20].x<<"  "<<u[20].x<<"  "<<du[20].x<<endl;
+  //std::cerr<<u_cache[20].y<<"  "<<u[20].y<<"  "<<du[20].y<<endl;
+  //std::cerr<<u_cache[20].z<<"  "<<u[20].z<<"  "<<du[20].z<<endl;
+  //std::cerr<<"strain, de/dt"<<endl;
+  //std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
+  //std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
+  //std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
+  //std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
+  //std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
+  //std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
 #endif
 }
 
@@ -229,7 +228,6 @@ void YY_MELField::TransformStrain(
     ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
     ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3)
 {
-  YY_DEBUGMSG("YY_MELField::TransformStrain(). Start.\n");
   const OC_INDEX size = state.mesh->Size();
   if(size<1) return;
   if(!strain_valid) return;
@@ -294,16 +292,16 @@ void YY_MELField::TransformStrain(
   }
 
 #ifdef YY_DEBUG
-  std::cerr<<"strain, de/dt"<<endl;
-  std::cerr<<e_diag_cache[20].x<<" "<<e_offdiag_cache[20].z<<" "<<e_offdiag_cache[20].y<<"  ";
-  std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
-  std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
-  std::cerr<<e_offdiag_cache[20].z<<" "<<e_diag_cache[20].y<<" "<<e_offdiag_cache[20].x<<"  ";
-  std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
-  std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
-  std::cerr<<e_offdiag_cache[20].y<<" "<<e_offdiag_cache[20].x<<" "<<e_diag_cache[20].z<<"  ";
-  std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
-  std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
+  //std::cerr<<"strain, de/dt"<<endl;
+  //std::cerr<<e_diag_cache[20].x<<" "<<e_offdiag_cache[20].z<<" "<<e_offdiag_cache[20].y<<"  ";
+  //std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
+  //std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
+  //std::cerr<<e_offdiag_cache[20].z<<" "<<e_diag_cache[20].y<<" "<<e_offdiag_cache[20].x<<"  ";
+  //std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
+  //std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
+  //std::cerr<<e_offdiag_cache[20].y<<" "<<e_offdiag_cache[20].x<<" "<<e_diag_cache[20].z<<"  ";
+  //std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
+  //std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
 #endif
 }
 

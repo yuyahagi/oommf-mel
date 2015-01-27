@@ -4,6 +4,8 @@
  * YY_FixedMEL class.
  * Calculates fixed MEL field/energy for a simulation.
  *
+ * Last updated on 2015-01-27 by Yu Yahagi
+ * 
  */
 
 #include "oc.h"
@@ -53,9 +55,6 @@ YY_FixedMEL::YY_FixedMEL(
 OC_BOOL YY_FixedMEL::Init()
 {
   mesh_id = 0;
-  fixedu.Release();
-  fixede_diag.Release();
-  fixede_offdiag.Release();
   MELField.Release();
   return Oxs_Energy::Init();
 }
@@ -75,11 +74,8 @@ void YY_FixedMEL::GetEnergy
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
 
     if(use_u) {
-      fixedu_init->FillMeshValue(state.mesh,fixedu);
       MELField.SetDisplacement(state,fixedu_init);
     } else {  // use_e
-      fixede_diag_init->FillMeshValue(state.mesh,fixede_diag);
-      fixede_offdiag_init->FillMeshValue(state.mesh,fixede_offdiag);
       MELField.SetStrain(state,fixede_diag_init,fixede_offdiag_init);
     }
 

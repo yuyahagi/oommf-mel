@@ -2,7 +2,10 @@
  *
  * OOMMF magnetoelastic coupling extension module.
  * YY_TransformStageMEL class.
- * Calculates MEL field/energy for each stage.
+ * Adds time/stage-dependence on YY_StageMEL by transforming elastic input
+ * specified for each stage and calculating MEL field/energy.
+ * 
+ * Last updated on 2015-01-27 by Yu Yahagi
  * 
  */
 
@@ -39,11 +42,6 @@ private:
   OC_REAL8m hmult;  // multiplier
   OC_UINT4m number_of_stages;
 
-  void GetAppliedField
-  (const Oxs_SimState& state,
-   ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
-   ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3) const;
-
   enum TransformType { identity, diagonal, symmetric, general };
   TransformType transform_type;
 
@@ -58,21 +56,21 @@ private:
   mutable OC_UINT4m working_stage;  // Stage index
   mutable ThreeVector max_field;
 
-  // Vector field may be specified by *either* a list of
-  // files, or else a Tcl command that returns a vector
-  // field spec.  This is set up in the Oxs_StageZeeman
-  // constructor.  The choice is determined elsewhere by
-  // examining the length of filelist; if it is >0, then
-  // the list of files method is used, otherwise cmd is
-  // called with the stage number as the single appended
-  // argument.
+  // Note: Elastic strain can be specified in various ways. It can be
+  // directly set by specifying strain or displacement can be used for
+  // calculation of strain. This choise is judged by the presence of
+  // displacement input (u_script or u_files) or by the presence of
+  // strain input(e_*diag_script or e_*diag_files). Also, the vector fields
+  // (either displacement or strain) may be specified either with a list of
+  // files or a Tcl command that returns a vector field spec. The choise
+  // between the file list and the Tcl command is made by the length of the
+  // file list; when it is >0, file list is used, otherwise *_cmd is called
+  // with the stage number as the single appended argument.
   vector<String> u_filelist;
   vector<String> e_diag_filelist, e_offdiag_filelist;
   Nb_TclCommand u_cmd, e_diag_cmd, e_offdiag_cmd;
 
   // Flags to specify the input source(s) of strain.
-  // Displacement u or strain e and with scripts or
-  // file lists as a shorhand.
   OC_BOOL use_u, use_u_filelist, use_u_script;
   OC_BOOL use_e, use_e_filelist, use_e_script;
 
