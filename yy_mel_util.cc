@@ -18,11 +18,15 @@
 #include "vectorfield.h"
 #include "util.h"
 
+#ifdef YY_DEBUG
+#include <iostream>
+#endif
+
 /* End includes */
 
 YY_MELField::YY_MELField():
   displacement_valid(0), strain_valid(0), 
-  MELCoef1_valid(0), MELCoef2_valid(0)
+  MELCoef1_valid(0), MELCoef2_valid(0), pE_pt_buf(0)
 {
 }
 
@@ -34,6 +38,9 @@ void YY_MELField::Release()
   u.Release();
   e_diag.Release();
   e_offdiag.Release();
+  du.Release();
+  de_diag.Release();
+  de_offdiag.Release();
   MELCoef1.Release();
   MELCoef2.Release();
 }
@@ -57,6 +64,11 @@ void YY_MELField::SetDisplacement(const Oxs_SimState& state,
 
   u_init->FillMeshValue(state.mesh,u_cache);
   u = u_cache;
+
+  // Initialize du/dt with zeros.
+  const ThreeVector zeros(0,0,0);
+  du.AdjustSize(state.mesh);
+  du=zeros;
   displacement_valid = 1;
 
   CalculateStrain(state);
@@ -83,6 +95,14 @@ void YY_MELField::SetStrain(const Oxs_SimState& state,
   e_offdiag_init->FillMeshValue(state.mesh,e_offdiag_cache);
   e_diag = e_diag_cache;
   e_offdiag=e_offdiag_cache;
+
+  // Initialize de/dt with zeros.
+  const ThreeVector zeros(0,0,0);
+  de_diag.AdjustSize(state.mesh);
+  de_offdiag.AdjustSize(state.mesh);
+  de_diag=zeros;
+  de_offdiag=zeros;
+
   displacement_valid = 0;
   strain_valid = 1;
 
@@ -107,47 +127,54 @@ void YY_MELField::CalculateStrain(const Oxs_SimState& state)
 
   e_diag.AdjustSize(mesh);
   e_offdiag.AdjustSize(mesh);
+  de_diag.AdjustSize(mesh);
+  de_offdiag.AdjustSize(mesh);
 
   // Compute du/dx
   for(OC_INDEX z=0; z<zdim; z++) {
     for(OC_INDEX y=0; y<ydim; y++) {
       for(OC_INDEX x=0; x<xdim; x++) {
         OC_INDEX i = mesh->Index(x,y,z);  // Get base index
-        ThreeVector du_dx;
-        ThreeVector du_dy;
-        ThreeVector du_dz;
+        ThreeVector du_dx, ddu_dx;  // ddu_dx = d(du/dx)/dt
+        ThreeVector du_dy, ddu_dy;
+        ThreeVector du_dz, ddu_dz;
         if(Ms[i]==0.0) {
           e_diag[i].Set(0.0, 0.0, 0.0);
           e_offdiag[i].Set(0.0, 0.0, 0.0);
+          de_diag[i].Set(0.0, 0.0, 0.0);
+          de_offdiag[i].Set(0.0, 0.0, 0.0);
           continue;
         }
 
-        if(x<xdim-1 && Ms[i+1]!=0.0) du_dx  = u[i+1];
-        else                         du_dx  = u[i];
-        if(x>0 && Ms[i-1]!=0.0)      du_dx -= u[i-1];
-        else                         du_dx -= u[i];
-        if(x<xdim-1 && Ms[i+1]!=0.0 && x>0 && Ms[i-1]!=0.0)
-          du_dx *= 0.5*idelx;
-        else
-          du_dx *= idelx;
+        if(x<xdim-1 && Ms[i+1]!=0.0) { du_dx  = u[i+1]; ddu_dx  = du[i+1]; }
+        else                         { du_dx  = u[i];   ddu_dx  = du[i];   }
+        if(x>0 && Ms[i-1]!=0.0)      { du_dx -= u[i-1]; ddu_dx -= du[i-1]; }
+        else                         { du_dx -= u[i];   ddu_dx -= du[i];   }
+        if(x<xdim-1 && Ms[i+1]!=0.0 && x>0 && Ms[i-1]!=0.0) {
+          du_dx *= 0.5*idelx; ddu_dx *= 0.5*idelx;
+        } else {
+          du_dx *= idelx; ddu_dx *= idelx;
+        }
 
-        if(y<ydim-1 && Ms[i+xdim]!=0.0) du_dy  = u[i+xdim];
-        else                            du_dy  = u[i];
-        if(y>0 && Ms[i-xdim]!=0.0)      du_dy -= u[i-xdim];
-        else                            du_dy -= u[i];
-        if(y<ydim-1 && Ms[i+xdim]!=0.0 && y>0 && Ms[i-xdim]!=0.0)
-          du_dy *= 0.5*idely;
-        else
-          du_dy *= idely;
+        if(y<ydim-1 && Ms[i+xdim]!=0.0) { du_dy  = u[i+xdim]; ddu_dy  = du[i+xdim]; }
+        else                            { du_dy  = u[i];      ddu_dy  = du[i];      }
+        if(y>0 && Ms[i-xdim]!=0.0)      { du_dy -= u[i-xdim]; ddu_dy -= du[i-xdim]; }
+        else                            { du_dy -= u[i];      ddu_dy -= du[i];      }
+        if(y<ydim-1 && Ms[i+xdim]!=0.0 && y>0 && Ms[i-xdim]!=0.0) {
+          du_dy *= 0.5*idely; ddu_dy *= 0.5*idely;
+        } else {
+          du_dy *= idely; ddu_dy *= idely;
+        }
 
-        if(z<zdim-1 && Ms[i+xydim]!=0.0) du_dz  = u[i+xydim];
-        else                             du_dz  = u[i];
-        if(z>0 && Ms[i-xydim]!=0.0)      du_dz -= u[i-xydim];
-        else                             du_dz -= u[i];
-        if(z<zdim-1 && Ms[i+xydim]!=0.0 && z>0 && Ms[i-xydim]!=0.0)
-          du_dz *= 0.5*idelz;
-        else
-          du_dz *= idelz;
+        if(z<zdim-1 && Ms[i+xydim]!=0.0) { du_dz  = u[i+xydim]; ddu_dz  = du[i+xydim]; }
+        else                             { du_dz  = u[i];       ddu_dz  = du[i];       }
+        if(z>0 && Ms[i-xydim]!=0.0)      { du_dz -= u[i-xydim]; ddu_dz -= du[i-xydim]; }
+        else                             { du_dz -= u[i];       ddu_dz -= du[i];       }
+        if(z<zdim-1 && Ms[i+xydim]!=0.0 && z>0 && Ms[i-xydim]!=0.0) {
+          du_dz *= 0.5*idelz; ddu_dz *= 0.5*idelz;
+        } else {
+          du_dz *= idelz; ddu_dz *= idelz;
+        }
 
         e_diag[i].Set(du_dx.x,du_dy.y,du_dz.z);
         e_offdiag[i].Set(
@@ -155,11 +182,132 @@ void YY_MELField::CalculateStrain(const Oxs_SimState& state)
           0.5*(du_dx.z+du_dz.x),
           0.5*(du_dy.x+du_dx.y)
         );
+        de_diag[i].Set(ddu_dx.x,ddu_dy.y,ddu_dz.z);
+        de_offdiag[i].Set(
+          0.5*(ddu_dz.y+ddu_dy.z),
+          0.5*(ddu_dx.z+ddu_dz.x),
+          0.5*(ddu_dy.x+ddu_dx.y)
+        );
       }
     }
   }
 }
 
+void YY_MELField::TransformDisplacement(
+    const Oxs_SimState& state,
+    ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
+    ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3)
+{
+  YY_DEBUGMSG("YY_MELField::TransformDisplacement(). Start.\n");
+  const OC_INDEX size = state.mesh->Size();
+  if(size<1) return;
+  if(!displacement_valid) return;
+
+  YY_DEBUGMSG("YY_MELField::TransformDisplacement(). Apply T matrix.\n");
+  for(OC_INDEX i=0; i<size; i++) {
+    const ThreeVector& v = u_cache[i];
+    u[i].Set(row1*v,row2*v,row3*v);
+    du[i].Set(drow1*v,drow2*v,drow3*v);
+  }
+  CalculateStrain(state);
+
+#ifdef YY_DEBUG
+  std::cerr<<"displacement u_cache, u, du/dt"<<endl;
+  std::cerr<<u_cache[20].x<<"  "<<u[20].x<<"  "<<du[20].x<<endl;
+  std::cerr<<u_cache[20].y<<"  "<<u[20].y<<"  "<<du[20].y<<endl;
+  std::cerr<<u_cache[20].z<<"  "<<u[20].z<<"  "<<du[20].z<<endl;
+  std::cerr<<"strain, de/dt"<<endl;
+  std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
+  std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
+  std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
+  std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
+  std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
+  std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
+#endif
+}
+
+void YY_MELField::TransformStrain(
+    const Oxs_SimState& state,
+    ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
+    ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3)
+{
+  YY_DEBUGMSG("YY_MELField::TransformStrain(). Start.\n");
+  const OC_INDEX size = state.mesh->Size();
+  if(size<1) return;
+  if(!strain_valid) return;
+
+  // Transformation by matrix multiplication T*e*transpose(T), where
+  //     / row1 \
+  // T = | row2 |
+  //     \ row3 /
+  // and e is the strain matrix.
+  ThreeVector trow1, trow2, trow3;  // Temporary matrix (T*e), row 1 through 3.
+  ThreeVector dtrow1, dtrow2, dtrow3;  // Time derivative of the above.
+  for(OC_INDEX i=0; i<size; i++) {
+    const ThreeVector& vd = e_diag_cache[i];
+    const ThreeVector& vo = e_offdiag_cache[i];
+    // Calculate T*e
+    trow1.Set(
+        row1.x*vd.x + row1.y*vo.z + row1.z*vo.y,
+        row1.x*vo.z + row1.y*vd.y + row1.z*vo.x,
+        row1.x*vo.y + row1.y*vo.x + row1.z*vd.z);
+    trow2.Set(
+        row2.x*vd.x + row2.y*vo.z + row2.z*vo.y,
+        row2.x*vo.z + row2.y*vd.y + row2.z*vo.x,
+        row2.x*vo.y + row2.y*vo.x + row2.z*vd.z);
+    trow3.Set(
+        row3.x*vd.x + row3.y*vo.z + row3.z*vo.y,
+        row3.x*vo.z + row3.y*vd.y + row3.z*vo.x,
+        row3.x*vo.y + row3.y*vo.x + row3.z*vd.z);
+
+    // Calculate (T*e)*transpose(T)
+    e_diag[i].Set(
+        trow1*row1,
+        trow2*row2,
+        trow3*row3);
+    e_offdiag[i].Set(
+        trow2*row3,
+        trow1*row3,
+        trow1*row2);
+
+    // Calculate d(T*e)/dt
+    dtrow1.Set(
+        drow1.x*vd.x + drow1.y*vo.z + drow1.z*vo.y,
+        drow1.x*vo.z + drow1.y*vd.y + drow1.z*vo.x,
+        drow1.x*vo.y + drow1.y*vo.x + drow1.z*vd.z);
+    dtrow2.Set(
+        drow2.x*vd.x + drow2.y*vo.z + drow2.z*vo.y,
+        drow2.x*vo.z + drow2.y*vd.y + drow2.z*vo.x,
+        drow2.x*vo.y + drow2.y*vo.x + drow2.z*vd.z);
+    dtrow3.Set(
+        drow3.x*vd.x + drow3.y*vo.z + drow3.z*vo.y,
+        drow3.x*vo.z + drow3.y*vd.y + drow3.z*vo.x,
+        drow3.x*vo.y + drow3.y*vo.x + drow3.z*vd.z);
+
+    // Calculate d((T*e)*transpose(T))/dt
+    de_diag[i].Set(
+        dtrow1*row1 + trow1*drow1,
+        dtrow2*row2 + trow2*drow2,
+        dtrow3*row3 + trow3*drow3);
+    de_offdiag[i].Set(
+        dtrow2*row3 + trow2*drow3,
+        dtrow1*row3 + trow1*drow3,
+        dtrow1*row2 + trow1*drow2);
+  }
+
+#ifdef YY_DEBUG
+  std::cerr<<"strain, de/dt"<<endl;
+  std::cerr<<e_diag_cache[20].x<<" "<<e_offdiag_cache[20].z<<" "<<e_offdiag_cache[20].y<<"  ";
+  std::cerr<<e_diag[20].x<<" "<<e_offdiag[20].z<<" "<<e_offdiag[20].y<<"  ";
+  std::cerr<<de_diag[20].x<<" "<<de_offdiag[20].z<<" "<<de_offdiag[20].y<<endl;
+  std::cerr<<e_offdiag_cache[20].z<<" "<<e_diag_cache[20].y<<" "<<e_offdiag_cache[20].x<<"  ";
+  std::cerr<<e_offdiag[20].z<<" "<<e_diag[20].y<<" "<<e_offdiag[20].x<<"  ";
+  std::cerr<<de_offdiag[20].z<<" "<<de_diag[20].y<<" "<<de_offdiag[20].x<<endl;
+  std::cerr<<e_offdiag_cache[20].y<<" "<<e_offdiag_cache[20].x<<" "<<e_diag_cache[20].z<<"  ";
+  std::cerr<<e_offdiag[20].y<<" "<<e_offdiag[20].x<<" "<<e_diag[20].z<<"  ";
+  std::cerr<<de_offdiag[20].y<<" "<<de_offdiag[20].x<<" "<<de_diag[20].z<<endl;
+#endif
+}
 
 void YY_MELField::CalculateMELField(
   const Oxs_SimState& state,
@@ -213,9 +361,27 @@ void YY_MELField::CalculateMELField(
   }
 
   // Energy density
+  OC_REAL8m pE_pt_sum=0;
   for(OC_INDEX i=0; i<size; i++) {
-    energy_buf[i] = (-0.5*MU0*Ms[i])*(field_buf[i]*spin[i]);
+    ThreeVector dH, dH2;
+    dH.x  = spin[i].x*de_diag[i].x;
+    dH.y  = spin[i].y*de_diag[i].y;
+    dH.z  = spin[i].z*de_diag[i].z;
+    dH *= -1/MU0*2*Msi[i]*MELCoef1[i];
+    dH2.x = spin[i].y*de_offdiag[i].z+spin[i].z*de_offdiag[i].y;
+    dH2.y = spin[i].x*de_offdiag[i].z+spin[i].z*de_offdiag[i].x;
+    dH2.z = spin[i].x*de_offdiag[i].y+spin[i].y*de_offdiag[i].x;
+    dH2 *= -1/MU0*2*Msi[i]*MELCoef2[i];
+    dH += dH2;
+    ThreeVector temp = (-0.5*MU0*Ms[i])*spin[i];
+    //energy_buf[i] = (-0.5*MU0*Ms[i])*(field_buf[i]*spin[i]);
+    energy_buf[i] = field_buf[i]*temp;
+    pE_pt_sum += mesh->Volume(i)*(dH*temp);
   }
+#ifdef YY_DEBUG
+  std::cerr<<"pE_pt: "<<pE_pt_sum<<endl;
+#endif
+  pE_pt_buf = pE_pt_sum;
 }
 
 #ifdef YY_DEBUG
@@ -225,6 +391,7 @@ void YY_MELField::DisplayValues(
     OC_INDEX ymin, OC_INDEX ymax,
     OC_INDEX zmin, OC_INDEX zmax) const
 {
+  return;
   const Oxs_RectangularMesh* mesh =
     static_cast<const Oxs_RectangularMesh*>(state.mesh);
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
