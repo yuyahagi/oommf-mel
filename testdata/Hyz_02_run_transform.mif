@@ -20,20 +20,18 @@ set file_input  0
 set H_input 7000
 set HAcAmpCoef_input 1
 
-# For StageMEL
+# For TransformStageMEL
 set tSimulation 1e-9
-set tStage 0.2e-12
 set tSample 2e-12
-set Ns [expr int($tSample / $tStage)]
+set tStage $tSample
 set nStageHmel [expr int($tSimulation/$tStage)]
-set nStage [expr $nStageHmel]
+set nStage $nStageHmel
 
 # Stopping time list
 set stopping_time_list {}
 for { set i 0 } { $i < $nStageHmel } { incr i } {
   set stopping_time_list [lappend stopping_time_list $tStage]
 }
-
 
 # Constants
 set pi [expr 4*atan(1.0)]
@@ -87,29 +85,32 @@ Specify Oxs_UZeeman [subst {
 
 Specify Oxs_Demag {}
 
-# YY_StageMEL test
+# YY_TransformStageMEL test
 Specify Oxs_UniformScalarField:B {
   value 7.85e6
 }
 
-Specify YY_StageMEL:StageField1 [subst {
+Specify YY_TransformStageMEL:StageField1 [subst {
   B1 :B
   B2 :B
-  u_script {StageFileField1 $tStage $Ns $file_input $HAcAmpCoef_input }
+  u_script {StageFileField1 $tStage $file_input $HAcAmpCoef_input }
   stage_count $nStage
+  type diagonal
+  script { Transform1 $tStage }
 }]
 
-Specify YY_StageMEL:StageField2 [subst {
+Specify YY_TransformStageMEL:StageField2 [subst {
   B1 :B
   B2 :B
-  u_script {StageFileField2 $tStage $Ns $file_input $HAcAmpCoef_input }
+  u_script {StageFileField2 $tStage $file_input $HAcAmpCoef_input }
   stage_count $nStage
+  type diagonal
+  script { Transform2 $tStage }
 }]
 
-proc StageFileField1 { tStage Ns file_input amp_coef stage } {
-  set file_number [expr int($stage / $Ns) + 100000 + 0]
-  set n [expr ($stage+$Ns) % $Ns]
-  set coef [expr double($Ns-$n)/$Ns]
+proc StageFileField1 { tStage file_input amp_coef stage } {
+  set file_number [expr $stage + 100000 + 0]
+  set coef [expr 1]
   set workname_Hstage [format "Ni_ellipse_sub12um_p212nm_pulse_b4.%06u.ovf" $file_number]
   set spec Oxs_FileVectorField
   lappend spec [subst {
@@ -118,12 +119,10 @@ proc StageFileField1 { tStage Ns file_input amp_coef stage } {
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($Ns-$n)/$Ns]
 
-proc StageFileField2 { tStage Ns file_input amp_coef stage } {
-  set file_number [expr int($stage / $Ns) + 100000 + 0 + 1]
-  set n [expr ($stage+$Ns) % $Ns]
-  set coef [expr double($n)/$Ns]
+proc StageFileField2 { tStage file_input amp_coef stage } {
+  set file_number [expr $stage + 100000 + 1]
+  set coef [expr 1]
   set workname_Hstage [format "Ni_ellipse_sub12um_p212nm_pulse_b4.%06u.ovf" $file_number]
   set spec Oxs_FileVectorField
   lappend spec [subst {
@@ -132,7 +131,51 @@ proc StageFileField2 { tStage Ns file_input amp_coef stage } {
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($n)/$Ns]
+
+Ignore proc Transform1 { tStage stage stagetime totaltime } {
+  set coef1 [expr 1-double($stagetime)/$tStage]
+  set dcoef1 [expr -double(1)/$tStage]
+  set coef2 [expr 2*(1-double($stagetime)/$tStage)]
+  set dcoef2 [expr 2*(-double(1)/$tStage)]
+  set coef3 [expr 3*(1-double($stagetime)/$tStage)]
+  set dcoef3 [expr 3*(-double(1)/$tStage)]
+  return [list $coef1 $coef2 $coef3 $coef2 $coef1 $coef1 $dcoef1 $dcoef2 $dcoef3 $dcoef2 $dcoef1 $dcoef1]
+}
+
+Ignore proc Transform2 { freq stage stagetime totaltime } {
+  global pi
+  set w [expr {$freq*2*$pi}]
+  set ct [expr {cos($w*$totaltime)}]
+  set mct [expr {-1*$ct}]      ;# "mct" is "minus cosine (w)t"
+  set st [expr {sin($w*$totaltime)}]
+  set mst [expr {-1*$st}]      ;# "mst" is "minus sine (w)t"
+  return [list  $ct $mst  0 \
+                $st $ct   0 \
+                  0   0   1 \
+                [expr {$w*$mst}] [expr {$w*$mct}] 0 \
+                [expr {$w*$ct}]  [expr {$w*$mst}] 0 \
+                       0                0         0]
+}
+
+proc Transform1 { tStage stage stagetime totaltime } {
+  set coef1 [expr 1-double($stagetime)/$tStage]
+  set dcoef1 [expr -double(1)/$tStage]
+  set coef2 [expr (1-double($stagetime)/$tStage)]
+  set dcoef2 [expr (-double(1)/$tStage)]
+  set coef3 [expr (1-double($stagetime)/$tStage)]
+  set dcoef3 [expr (-double(1)/$tStage)]
+  return [list $coef1 $coef2 $coef3 $dcoef1 $dcoef2 $dcoef3]
+}
+
+proc Transform2 { tStage stage stagetime totaltime } {
+  set coef1 [expr double($stagetime)/$tStage]
+  set dcoef1 [expr double(1)/$tStage]
+  set coef2 [expr (double($stagetime)/$tStage)]
+  set dcoef2 [expr (double(1)/$tStage)]
+  set coef3 [expr double($stagetime)/$tStage]
+  set dcoef3 [expr double(1)/$tStage]
+  return [list $coef1 $coef2 $coef3 $dcoef1 $dcoef2 $dcoef3]
+}
 
 # Evolver/Driver
 Specify Oxs_EulerEvolve [subst {
@@ -170,10 +213,8 @@ Destination monitor_disp1 mmDisp
 Destination monitor_disp2 mmDisp
 Destination archive mmArchive
 
-Schedule DataTable monitor_table step 2
-Schedule DataTable monitor_graph step 2
-Schedule YY_StageMEL:StageField1:Field monitor_disp1 step 2
-Schedule YY_StageMEL:StageField2:Field monitor_disp2 step 2
-Schedule YY_StageMEL:StageField1:Field archive stage 1
-Schedule YY_StageMEL:StageField2:Field archive stage 1
+Schedule DataTable monitor_table step 1
+Schedule DataTable monitor_graph step 1
+Schedule YY_TransformStageMEL:StageField1:Field monitor_disp1 step 1
+Schedule YY_TransformStageMEL:StageField2:Field monitor_disp2 step 1
 #Schedule DataTable archive step 100

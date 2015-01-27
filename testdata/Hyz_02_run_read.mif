@@ -20,7 +20,7 @@ set file_input  0
 set H_input 7000
 set HAcAmpCoef_input 1
 
-# For StageMEL
+# For StageZeeman
 set tSimulation 1e-9
 set tStage 0.2e-12
 set tSample 2e-12
@@ -87,52 +87,36 @@ Specify Oxs_UZeeman [subst {
 
 Specify Oxs_Demag {}
 
-# YY_StageMEL test
-Specify Oxs_UniformScalarField:B {
-  value 7.85e6
-}
-
-Specify YY_StageMEL:StageField1 [subst {
-  B1 :B
-  B2 :B
-  u_script {StageFileField1 $tStage $Ns $file_input $HAcAmpCoef_input }
+# Specify the Hmel file for the current time
+Specify Oxs_StageZeeman:StageField1 [subst {
+  script { StageFileField1 $tStage $Ns $file_input $HAcAmpCoef_input }
   stage_count $nStage
 }]
 
-Specify YY_StageMEL:StageField2 [subst {
-  B1 :B
-  B2 :B
-  u_script {StageFileField2 $tStage $Ns $file_input $HAcAmpCoef_input }
+Specify Oxs_StageZeeman:StageField2 [subst {
+  script { StageFileField2 $tStage $Ns $file_input $HAcAmpCoef_input }
   stage_count $nStage
 }]
 
 proc StageFileField1 { tStage Ns file_input amp_coef stage } {
-  set file_number [expr int($stage / $Ns) + 100000 + 0]
-  set n [expr ($stage+$Ns) % $Ns]
-  set coef [expr double($Ns-$n)/$Ns]
-  set workname_Hstage [format "Ni_ellipse_sub12um_p212nm_pulse_b4.%06u.ovf" $file_number]
+  set workname_Hstage [format "Hyz_02_run_file00_H7000_AC0001-YY_StageMEL-StageField1-Field-%09u.ohf" $stage]
   set spec Oxs_FileVectorField
   lappend spec [subst {
     atlas :atlas
-    multiplier [expr $coef*$amp_coef]
+    multiplier [expr $amp_coef]
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($Ns-$n)/$Ns]
 
 proc StageFileField2 { tStage Ns file_input amp_coef stage } {
-  set file_number [expr int($stage / $Ns) + 100000 + 0 + 1]
-  set n [expr ($stage+$Ns) % $Ns]
-  set coef [expr double($n)/$Ns]
-  set workname_Hstage [format "Ni_ellipse_sub12um_p212nm_pulse_b4.%06u.ovf" $file_number]
+  set workname_Hstage [format "Hyz_02_run_file00_H7000_AC0001-YY_StageMEL-StageField2-Field-%09u.ohf" $stage]
   set spec Oxs_FileVectorField
   lappend spec [subst {
     atlas :atlas
-    multiplier [expr $coef*$amp_coef]
+    multiplier [expr $amp_coef]
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($n)/$Ns]
 
 # Evolver/Driver
 Specify Oxs_EulerEvolve [subst {
@@ -172,8 +156,8 @@ Destination archive mmArchive
 
 Schedule DataTable monitor_table step 2
 Schedule DataTable monitor_graph step 2
-Schedule YY_StageMEL:StageField1:Field monitor_disp1 step 2
-Schedule YY_StageMEL:StageField2:Field monitor_disp2 step 2
-Schedule YY_StageMEL:StageField1:Field archive stage 1
-Schedule YY_StageMEL:StageField2:Field archive stage 1
+Schedule Oxs_StageZeeman:StageField1:Field monitor_disp1 step 2
+Schedule Oxs_StageZeeman:StageField2:Field monitor_disp2 step 2
+#Schedule YY_StageIsotropicMEL:StageField1:Field monitor_disp1 step 2
+#Schedule YY_StageIsotropicMEL:StageField2:Field monitor_disp2 step 2
 #Schedule DataTable archive step 100

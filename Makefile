@@ -19,6 +19,9 @@ TESTMIF_FIXED = testdata/Hyz_02_run_fixed.mif
 TESTMIF_FIXED_STAGEMEL = testdata/Hyz_02_run_fixed_stagemel.mif
 TESTMIF_FIXED_STRAIN = testdata/Hyz_02_run_fixed_strain.mif
 
+TESTMIF_TRANSFORM = testdata/Hyz_02_run_transform.mif
+TESTMIF_TRANSFORM_STRAIN = testdata/Hyz_02_run_transform_strain.mif
+
 .SUFFIXES: .cc .h .o
 
 RM = rm
@@ -58,6 +61,12 @@ test_fixed_stagemel:
 
 test_fixed_strain:
 	$(OOMMF) oxsii $(TESTMIF_FIXED_STRAIN)
+
+test_transform:
+	$(OOMMF) oxsii $(TESTMIF_TRANSFORM)
+
+test_transform_strain:
+	$(OOMMF) oxsii $(TESTMIF_TRANSFORM_STRAIN)
 
 # Dependency rule
 #-include Makefile.depend
