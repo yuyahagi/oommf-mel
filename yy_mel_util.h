@@ -6,6 +6,20 @@
  * 
  */
 
+#ifndef _YY_MEL_UTIL
+#define _YY_MEL_UTIL
+
+#include "oc.h"
+#include "meshvalue.h"
+#include "simstate.h"
+#include "threevector.h"
+#include "scalarfield.h"
+#include "vectorfield.h"
+#include "util.h"
+
+/* End includes */
+
+// Debug flag
 #define YY_DEBUG
 #ifdef YY_DEBUG
 #define YY_DEBUGMSG(x) fprintf(stderr,(x))
@@ -13,23 +27,6 @@
 #define YY_DEBUGMSG(x) ;
 #endif
 
-#ifndef _YY_MEL_UTIL
-#define _YY_MEL_UTIL
-
-#include <string>
-
-#include "oc.h"
-#include "director.h"
-#include "energy.h"
-#include "mesh.h"
-#include "rectangularmesh.h"
-#include "meshvalue.h"
-#include "simstate.h"
-#include "threevector.h"
-#include "vectorfield.h"
-#include "util.h"
-
-/* End includes */
 class YY_MELField {
 private:
   Oxs_MeshValue<OC_REAL8m> MELCoef1, MELCoef2;   // MEL coefficients

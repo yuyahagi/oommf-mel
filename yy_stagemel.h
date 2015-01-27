@@ -15,13 +15,13 @@
 #include "nb.h"
 #include "director.h"
 #include "energy.h"
-#include "meshvalue.h"
 #include "simstate.h"
 #include "threevector.h"
 #include "vectorfield.h"
-#include "util.h"
 
 #include "yy_mel_util.h"
+
+OC_USE_STRING;
 
 /* End includes */
 

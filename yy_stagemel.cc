@@ -6,6 +6,9 @@
  * 
  */
 
+#include <string>
+#include <vector>
+
 #include "oc.h"
 #include "nb.h"
 #include "director.h"
@@ -13,7 +16,6 @@
 #include "meshvalue.h"
 #include "simstate.h"
 #include "threevector.h"
-#include "rectangularmesh.h"
 #include "energy.h"             // Needed to make MSVC++ 5 happy
 
 #include "yy_stagemel.h"

@@ -8,8 +8,6 @@
 
 #include "yy_MEL_util.h"
 
-#include "nb.h"
-#include "energy.h"
 #include "mesh.h"
 #include "rectangularmesh.h"
 #include "meshvalue.h"
@@ -374,7 +372,6 @@ void YY_MELField::CalculateMELField(
     dH2 *= -1/MU0*2*Msi[i]*MELCoef2[i];
     dH += dH2;
     ThreeVector temp = (-0.5*MU0*Ms[i])*spin[i];
-    //energy_buf[i] = (-0.5*MU0*Ms[i])*(field_buf[i]*spin[i]);
     energy_buf[i] = field_buf[i]*temp;
     pE_pt_sum += mesh->Volume(i)*(dH*temp);
   }
@@ -391,7 +388,6 @@ void YY_MELField::DisplayValues(
     OC_INDEX ymin, OC_INDEX ymax,
     OC_INDEX zmin, OC_INDEX zmax) const
 {
-  return;
   const Oxs_RectangularMesh* mesh =
     static_cast<const Oxs_RectangularMesh*>(state.mesh);
   const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
