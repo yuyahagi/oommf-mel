@@ -101,15 +101,6 @@ public:
   virtual OC_BOOL Init();
   virtual void StageRequestCount(unsigned int& min,
       unsigned int& max) const;
-
-#ifdef YY_DEBUG
-  // For debug. Display variables in specified range
-  void DisplayValues(
-      const Oxs_SimState& state,
-      OC_INDEX xmin, OC_INDEX xmax,
-      OC_INDEX ymin, OC_INDEX ymax,
-      OC_INDEX zmin, OC_INDEX zmax) const;
-#endif
 };
 
 #endif // _YY_STAGEMEL

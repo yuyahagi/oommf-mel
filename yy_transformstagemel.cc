@@ -38,7 +38,6 @@ YY_TransformStageMEL::YY_TransformStageMEL(
   : Oxs_Energy(name,newdtr,argstr), number_of_stages(0),
   mesh_id(0), stage_valid(0)
 {
-  YY_DEBUGMSG("YY_TransformStageMEL constructor start.\n");
   working_stage = static_cast<OC_UINT4m>(static_cast<OC_INT4m>(-1));
   // First ChangeFileInitializer() call should be triggered
   // by the stage_valid boolean.
@@ -82,7 +81,6 @@ YY_TransformStageMEL::YY_TransformStageMEL(
   }
 
   // Initialize outputs.
-  YY_DEBUGMSG("YY_TransformStageMEL constructor initialize outputs.\n");
   B_MEL_output.Setup(this, InstanceName(), "B max", "mT", 1,
     &YY_TransformStageMEL::Fill__B_MEL_output);
   B_MELx_output.Setup(this, InstanceName(), "Bx max", "mT", 1,
@@ -133,13 +131,11 @@ YY_TransformStageMEL::~YY_TransformStageMEL()
 
 OC_BOOL YY_TransformStageMEL::Init()
 {
-  YY_DEBUGMSG("YY_TransformStageMEL::Init(): start.\n");
   stage_valid = 0;
 
   mesh_id = 0;
   MELField.Release();
 
-  YY_DEBUGMSG("YY_TransformStageMEL::Init(): Calling Oxs_Energy::Init()\n");
   return Oxs_Energy::Init();
 }
 
@@ -156,19 +152,16 @@ void YY_TransformStageMEL::StageRequestCount(unsigned int& min,
 void YY_TransformStageMEL::ChangeDisplacementInitializer(
     OC_UINT4m stage, const Oxs_Mesh* mesh) const
 {
-  YY_DEBUGMSG("YY_TransformStageMEL::ChangeDisplacementInitializer(): start.\n");
   // Setup displacement
   vector<String> params;
   if(u_filelist.empty()) {
     // Use u_cmd to generate field initializer
-    YY_DEBUGMSG("YY_TransformStageMEL::ChangeDisplacementInitializer(): u_filelist.empty.\n");
     u_cmd.SaveInterpResult();
     u_cmd.SetCommandArg(0,stage);
     u_cmd.Eval();
     u_cmd.GetResultList(params);
     u_cmd.RestoreInterpResult();
   } else {
-    YY_DEBUGMSG("YY_TransformStageMEL::ChangeDisplacementInitializer(): !u_filelist.empty.\n");
     // Construct field initializer using Oxs_FileVectorField
     // with filename from u_filelist and range from mesh.
     OC_UINT4m index = stage;
@@ -210,12 +203,10 @@ void YY_TransformStageMEL::ChangeDisplacementInitializer(
 void YY_TransformStageMEL::ChangeStrainInitializer(
     OC_UINT4m stage, const Oxs_Mesh* mesh) const
 {
-  YY_DEBUGMSG("YY_TransformStageMEL::ChangeStrainInitializer(): start.\n");
   // Setup strain
   vector<String> params_diag, params_offdiag;
   if( use_e_script ) {
     // Use e_*diag_cmd to generate field initializer
-    YY_DEBUGMSG("YY_TransformStageMEL::ChangeStrainInitializer(): use_e_script.\n");
     e_diag_cmd.SaveInterpResult();
     e_diag_cmd.SetCommandArg(0,stage);
     e_diag_cmd.Eval();
@@ -227,7 +218,6 @@ void YY_TransformStageMEL::ChangeStrainInitializer(
     e_offdiag_cmd.GetResultList(params_offdiag);
     e_offdiag_cmd.RestoreInterpResult();
   } else {  // use_e_filelist
-    YY_DEBUGMSG("YY_TransformStageMEL::ChangeStrainInitializer(): use_e_filelist.\n");
     // Construct field initializer using Oxs_FileVectorField
     // with filename from e_diag_filelist and range from mesh.
     OC_UINT4m index = stage;
@@ -293,21 +283,18 @@ void YY_TransformStageMEL::UpdateCache(const Oxs_SimState& state) const
   // Update cache as necessary
   if(!stage_valid) {
     // The first go, or else mesh has changed.
-    YY_DEBUGMSG("YY_TransformStageMEL:UpdateCache(): !stage_valid.\n");
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeInitializer(state);
     SetStrain(state);
   } else if(working_stage != state.stage_number) {
     mesh_id = 0;
-    YY_DEBUGMSG("YY_TransformStageMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
     ChangeInitializer(state);
     SetStrain(state);
     mesh_id = state.mesh->Id();
   }
   if(mesh_id != state.mesh->Id()) {
     // The first go, or else mesh has changed.
-    YY_DEBUGMSG("YY_TransformStageMEL:UpdateCache(): mesh_id != state.mesh->Id().\n");
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeInitializer(state);
@@ -320,8 +307,6 @@ void YY_TransformStageMEL::SetTransformMatrix(const Oxs_SimState& state,
       ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
       ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3) const
 {
-  YY_DEBUGMSG("YY_TransformStageMEL::SetTransformMatrix(): Beginning the method.\n");
-
   // Special handling for identity transform (no script)
   if(transform_type == identity) {
     row1.Set(1,0,0); row2.Set(0,1,0); row3.Set(0,0,1);
@@ -366,7 +351,6 @@ void YY_TransformStageMEL::SetTransformMatrix(const Oxs_SimState& state,
   // Fill row vectors
   switch(transform_type) {
   case diagonal:
-    YY_DEBUGMSG("Case: diagonal.\n");
     if(srv.size()!=6) {
       String msg
 	= String("Error detected during field evaluation.")
@@ -383,7 +367,6 @@ void YY_TransformStageMEL::SetTransformMatrix(const Oxs_SimState& state,
     drow3.Set(0,0,srv[5]);
     break;
   case symmetric:
-    YY_DEBUGMSG("Case: symmetric.\n");
     if(srv.size()!=12) {
       String msg
 	= String("Error detected during field evaluation.")
@@ -400,7 +383,6 @@ void YY_TransformStageMEL::SetTransformMatrix(const Oxs_SimState& state,
     drow3.Set(srv[8],srv[10],srv[11]);
     break;
   case general:
-    YY_DEBUGMSG("Case: general.\n");
     if(srv.size()!=18) {
       String msg
 	= String("Error detected during field evaluation.")
@@ -433,7 +415,6 @@ void YY_TransformStageMEL::SetTransformMatrix(const Oxs_SimState& state,
 void YY_TransformStageMEL::GetEnergy
 (const Oxs_SimState& state, Oxs_EnergyData& oed) const
 {
-  YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): Beginning the method.\n");
   OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
@@ -452,21 +433,16 @@ void YY_TransformStageMEL::GetEnergy
   field.AdjustSize(state.mesh);
 
   if(transform_type == identity) {
-    YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): type==identity.\n");
     MELField.CalculateMELField(state, hmult, field, energy);
     max_field = MELField.GetMaxField();
   } else {
-    YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): type!=identity.\n");
     // Apply transform.
     ThreeVector row1, row2, row3;
     ThreeVector drow1, drow2, drow3;
-    YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): SetTransformMatrix.\n");
     SetTransformMatrix(state,row1,row2,row3,drow1,drow2,drow3);
     if(use_u) {
-      YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): Transform using displacement.\n");
       MELField.TransformDisplacement(state,row1,row2,row3,drow1,drow2,drow3);
     } else {  // use_e
-      YY_DEBUGMSG("YY_TransformStageMEL::GetEnergy(): Transform using strain.\n");
       MELField.TransformStrain(state,row1,row2,row3,drow1,drow2,drow3);
     }
 
@@ -538,7 +514,6 @@ void YY_TransformStageMEL::SelectElasticityInputType()
   // Whether filelist(s) or script(s)
   // ======================================================================
   if(use_u) {
-    YY_DEBUGMSG("use_u.\n");
     use_u_filelist = HasInitValue("u_files");
     use_u_script = HasInitValue("u_script");
     if( use_u_filelist && use_u_script ) {
@@ -583,13 +558,11 @@ void YY_TransformStageMEL::SelectElasticityInputType()
       // Default value = 0, i.e., no preference.
     }
   } else { // use_e
-    YY_DEBUGMSG("use_e.\n");
     use_e_filelist = HasInitValue("e_diag_files") && HasInitValue("e_offdiag_files");
     use_e_script = HasInitValue("e_diag_script") && HasInitValue("e_offdiag_script");
     if( (use_e_filelist && use_e_script) || (!use_e_filelist && !use_e_script) ) {
       // If both files and script are specified,
       // or if neither is selected.
-      YY_DEBUGMSG("Flag error.\n");
       const char *cptr =
         "Select only one of e_*diag_script and e_*diag_files. You"
         " need to specify both diagonal and off-diagonal elements.";
@@ -603,10 +576,6 @@ void YY_TransformStageMEL::SelectElasticityInputType()
       // whether to call e_cmd or not.
       GetGroupedStringListInitValue("e_diag_files",e_diag_filelist);
       GetGroupedStringListInitValue("e_offdiag_files",e_offdiag_filelist);
-#ifdef YY_DEBUG
-      YY_DEBUGMSG("filelist sizes: ");
-      std::cerr << e_diag_filelist.size() << " " << e_offdiag_filelist.size()<<endl;
-#endif
       if( e_diag_filelist.size() != e_offdiag_filelist.size() ) {
         throw Oxs_ExtError(this,
             "\"e_diag_files\" and \"e_offdiag_files\" must be at"

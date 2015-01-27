@@ -30,8 +30,6 @@ YY_FixedMEL::YY_FixedMEL(
   const char* argstr)   // MIF input block parameters
   : Oxs_Energy(name,newdtr,argstr), mesh_id(0)
 {
-  YY_DEBUGMSG("YY_FixedMEL: Constructor start.\n");
-
   // Process arguments
   field_mult = GetRealInitValue("multiplier",1.0);
 
@@ -67,7 +65,6 @@ void YY_FixedMEL::GetEnergy
  Oxs_EnergyData& oed
  ) const
 {
-  YY_DEBUGMSG("YY_FixedMEL: GetEnergy() start.\n");
   OC_INDEX size = state.mesh->Size();
   if(size<1) return; // Nothing to do
   if(mesh_id != state.mesh->Id()) {
@@ -78,11 +75,9 @@ void YY_FixedMEL::GetEnergy
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
 
     if(use_u) {
-      YY_DEBUGMSG("Fill u.\n");
       fixedu_init->FillMeshValue(state.mesh,fixedu);
       MELField.SetDisplacement(state,fixedu_init);
     } else {  // use_e
-      YY_DEBUGMSG("Fill e.\n");
       fixede_diag_init->FillMeshValue(state.mesh,fixede_diag);
       fixede_offdiag_init->FillMeshValue(state.mesh,fixede_offdiag);
       MELField.SetStrain(state,fixede_diag_init,fixede_offdiag_init);
@@ -97,7 +92,6 @@ void YY_FixedMEL::GetEnergy
   Oxs_MeshValue<OC_REAL8m>& energy = *oed.energy_buffer;
   Oxs_MeshValue<ThreeVector>& field = *oed.field_buffer;
 
-  YY_DEBUGMSG("YY_FixedMEL: Calculate MEL field.\n");
   MELField.CalculateMELField(state, field_mult, field, energy);
   max_field = MELField.GetMaxField();
 

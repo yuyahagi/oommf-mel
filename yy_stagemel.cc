@@ -20,10 +20,6 @@
 
 #include "yy_stagemel.h"
 
-#ifdef YY_DEBUG
-#include <iostream>
-#endif
-
 OC_USE_STRING;
 
 /* End includes */
@@ -39,7 +35,6 @@ YY_StageMEL::YY_StageMEL(
   : Oxs_Energy(name,newdtr,argstr), number_of_stages(0),
   mesh_id(0), stage_valid(0)
 {
-  YY_DEBUGMSG("YY_StageMEL constructor start.\n");
   working_stage = static_cast<OC_UINT4m>(static_cast<OC_INT4m>(-1));
   // First ChangeFileInitializer() call should be triggered
   // by the stage_valid boolean.
@@ -55,7 +50,6 @@ YY_StageMEL::YY_StageMEL(
   SelectElasticityInputType();
 
   // Initialize outputs.
-  YY_DEBUGMSG("YY_StageMEL constructor initialize outputs.\n");
   B_MEL_output.Setup(this, InstanceName(), "B max", "mT", 1,
     &YY_StageMEL::Fill__B_MEL_output);
   B_MELx_output.Setup(this, InstanceName(), "Bx max", "mT", 1,
@@ -79,13 +73,11 @@ YY_StageMEL::~YY_StageMEL()
 
 OC_BOOL YY_StageMEL::Init()
 {
-  YY_DEBUGMSG("YY_StageMEL::Init(): start.\n");
   stage_valid = 0;
 
   mesh_id = 0;
   MELField.Release();
 
-  YY_DEBUGMSG("YY_StageMEL::Init(): Calling Oxs_Energy::Init()\n");
   return Oxs_Energy::Init();
 }
 
@@ -102,19 +94,16 @@ void YY_StageMEL::StageRequestCount(unsigned int& min,
 void YY_StageMEL::ChangeDisplacementInitializer(
     OC_UINT4m stage, const Oxs_Mesh* mesh) const
 {
-  YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): start.\n");
   // Setup displacement
   vector<String> params;
   if(u_filelist.empty()) {
     // Use u_cmd to generate field initializer
-    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): u_filelist.empty.\n");
     u_cmd.SaveInterpResult();
     u_cmd.SetCommandArg(0,stage);
     u_cmd.Eval();
     u_cmd.GetResultList(params);
     u_cmd.RestoreInterpResult();
   } else {
-    YY_DEBUGMSG("YY_StageMEL::ChangeDisplacementInitializer(): !u_filelist.empty.\n");
     // Construct field initializer using Oxs_FileVectorField
     // with filename from u_filelist and range from mesh.
     OC_UINT4m index = stage;
@@ -156,12 +145,10 @@ void YY_StageMEL::ChangeDisplacementInitializer(
 void YY_StageMEL::ChangeStrainInitializer(
     OC_UINT4m stage, const Oxs_Mesh* mesh) const
 {
-  YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): start.\n");
   // Setup strain
   vector<String> params_diag, params_offdiag;
   if( use_e_script ) {
     // Use e_*diag_cmd to generate field initializer
-    YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): use_e_script.\n");
     e_diag_cmd.SaveInterpResult();
     e_diag_cmd.SetCommandArg(0,stage);
     e_diag_cmd.Eval();
@@ -173,7 +160,6 @@ void YY_StageMEL::ChangeStrainInitializer(
     e_offdiag_cmd.GetResultList(params_offdiag);
     e_offdiag_cmd.RestoreInterpResult();
   } else {  // use_e_filelist
-    YY_DEBUGMSG("YY_StageMEL::ChangeStrainInitializer(): use_e_filelist.\n");
     // Construct field initializer using Oxs_FileVectorField
     // with filename from e_diag_filelist and range from mesh.
     OC_UINT4m index = stage;
@@ -239,14 +225,12 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
   // Update cache as necessary
   if(!stage_valid) {
     // The first go.
-    YY_DEBUGMSG("YY_StageMEL:UpdateCache(): !stage_valide.\n");
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeInitializer(state);
     SetStrain(state);
   } else if(working_stage != state.stage_number) {
     mesh_id = 0;
-    YY_DEBUGMSG("YY_StageMEL:UpdateCache(): ChangeDisplacementInitializer().\n");
     ChangeInitializer(state);
     SetStrain(state);
     mesh_id = state.mesh->Id();
@@ -261,7 +245,6 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
 void YY_StageMEL::GetEnergy
 (const Oxs_SimState& state, Oxs_EnergyData& oed) const
 {
-  YY_DEBUGMSG("YY_StageMEL::GetEnergy(): Beginning the method.\n");
   OC_INDEX size = state.mesh->Size();
   if(size<1) return;
 
@@ -343,7 +326,6 @@ void YY_StageMEL::SelectElasticityInputType()
   // Whether filelist(s) or script(s)
   // ======================================================================
   if(use_u) {
-    YY_DEBUGMSG("use_u.\n");
     use_u_filelist = HasInitValue("u_files");
     use_u_script = HasInitValue("u_script");
     if( use_u_filelist && use_u_script ) {
@@ -388,13 +370,11 @@ void YY_StageMEL::SelectElasticityInputType()
       // Default value = 0, i.e., no preference.
     }
   } else { // use_e
-    YY_DEBUGMSG("use_e.\n");
     use_e_filelist = HasInitValue("e_diag_files") && HasInitValue("e_offdiag_files");
     use_e_script = HasInitValue("e_diag_script") && HasInitValue("e_offdiag_script");
     if( (use_e_filelist && use_e_script) || (!use_e_filelist && !use_e_script) ) {
       // If both files and script are specified,
       // or if neither is selected.
-      YY_DEBUGMSG("Flag error.\n");
       const char *cptr =
         "Select only one of e_*diag_script and e_*diag_files. You"
         " need to specify both diagonal and off-diagonal elements.";
@@ -408,10 +388,6 @@ void YY_StageMEL::SelectElasticityInputType()
       // whether to call e_cmd or not.
       GetGroupedStringListInitValue("e_diag_files",e_diag_filelist);
       GetGroupedStringListInitValue("e_offdiag_files",e_offdiag_filelist);
-#ifdef YY_DEBUG
-      YY_DEBUGMSG("filelist sizes: ");
-      std::cerr << e_diag_filelist.size() << " " << e_offdiag_filelist.size()<<endl;
-#endif
       if( e_diag_filelist.size() != e_offdiag_filelist.size() ) {
         throw Oxs_ExtError(this,
             "\"e_diag_files\" and \"e_offdiag_files\" must be at"
