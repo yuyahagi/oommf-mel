@@ -4,6 +4,8 @@
  * YY_FixedMEL class.
  * Calculates fixed MEL field/energy for a simulation.
  *
+ * Last updated on 2015-01-27 by Yu Yahagi
+ * 
  */
 
 #include "oc.h"

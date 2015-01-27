@@ -2,7 +2,10 @@
  *
  * OOMMF magnetoelastic coupling extension module.
  * YY_TransformStageMEL class.
- * Calculates MEL field/energy for each stage.
+ * Adds time/stage-dependence on YY_StageMEL by transforming elastic input
+ * specified for each stage and calculating MEL field/energy.
+ * 
+ * Last updated on 2015-01-27 by Yu Yahagi
  * 
  */
 
@@ -84,6 +87,7 @@ YY_TransformStageMEL::YY_TransformStageMEL(
   B_MELy_output.Register(director, 0);
   B_MELz_output.Register(director, 0);
 
+  // Set up the Tcl script for transformation
   String cmdoptreq;
   String runscript;
   if(transform_type != identity) {
