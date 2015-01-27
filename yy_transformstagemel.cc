@@ -58,20 +58,8 @@ YY_TransformStageMEL::YY_TransformStageMEL(
   } else if(xform_type_string.compare("diagonal")==0) {
     transform_type = diagonal;
   } else if(xform_type_string.compare("symmetric")==0) {
-    //if(use_e) {
-    //  const char *cptr =
-    //    "Transform type \"symmetric\" is only available for"
-    //    " displacement input.\n";
-    //  throw Oxs_ExtError(this,cptr);
-    //}
     transform_type = symmetric;
   } else if(xform_type_string.compare("general")==0) {
-    //if(use_e) {
-    //  const char *cptr =
-    //    "Transform type \"general\" is only available for"
-    //    " displacement input.\n";
-    //  throw Oxs_ExtError(this,cptr);
-    //}
     transform_type = general;
   } else {
     String msg = String("Invalid transform type: \"")
@@ -282,7 +270,7 @@ void YY_TransformStageMEL::UpdateCache(const Oxs_SimState& state) const
 {
   // Update cache as necessary
   if(!stage_valid) {
-    // The first go, or else mesh has changed.
+    // The first go.
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeInitializer(state);
@@ -294,7 +282,7 @@ void YY_TransformStageMEL::UpdateCache(const Oxs_SimState& state) const
     mesh_id = state.mesh->Id();
   }
   if(mesh_id != state.mesh->Id()) {
-    // The first go, or else mesh has changed.
+    // The mesh has changed.
     mesh_id = 0;
     MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     ChangeInitializer(state);
@@ -420,8 +408,6 @@ void YY_TransformStageMEL::GetEnergy
 
   UpdateCache(state);
 
-  const Oxs_MeshValue<ThreeVector>& spin = state.spin;
-  const Oxs_MeshValue<OC_REAL8m>& Ms = *(state.Ms);
   const Oxs_Mesh* mesh = state.mesh;
 
   // Use supplied buffer space, and reflect that use in oed.
@@ -429,8 +415,8 @@ void YY_TransformStageMEL::GetEnergy
   oed.field = oed.field_buffer;
   Oxs_MeshValue<OC_REAL8m>& energy = *oed.energy_buffer;
   Oxs_MeshValue<ThreeVector>& field = *oed.field_buffer;
-  energy.AdjustSize(state.mesh);
-  field.AdjustSize(state.mesh);
+  energy.AdjustSize(mesh);
+  field.AdjustSize(mesh);
 
   if(transform_type == identity) {
     MELField.CalculateMELField(state, hmult, field, energy);
@@ -507,12 +493,11 @@ void YY_TransformStageMEL::SetStrain(const Oxs_SimState& state) const
 void YY_TransformStageMEL::SelectElasticityInputType()
 {
   // Sets several flags for elasticity input.
+
   // Whether you use displacement or strain
   use_u = HasInitValue("u_script") || HasInitValue("u_files");
 
-  // ======================================================================
   // Whether filelist(s) or script(s)
-  // ======================================================================
   if(use_u) {
     use_u_filelist = HasInitValue("u_files");
     use_u_script = HasInitValue("u_script");
@@ -619,7 +604,5 @@ void YY_TransformStageMEL::SelectElasticityInputType()
       // Default value = 0, i.e., no preference.
     }
   }
-  // ======================================================================
   // END: Whether filelist(s) or script(s)
-  // ======================================================================
 }

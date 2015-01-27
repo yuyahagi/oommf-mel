@@ -20,11 +20,11 @@
 /* End includes */
 
 // Debug flag
-#define YY_DEBUG
+//#define YY_DEBUG
 #ifdef YY_DEBUG
 #define YY_DEBUGMSG(x) fprintf(stderr,(x))
 #else
-#define YY_DEBUGMSG(x) ;
+#define YY_DEBUGMSG(x) 
 #endif
 
 class YY_MELField {

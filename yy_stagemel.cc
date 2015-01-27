@@ -236,11 +236,11 @@ void YY_StageMEL::UpdateCache(const Oxs_SimState& state) const
     mesh_id = state.mesh->Id();
   } else if(mesh_id != state.mesh->Id()) {
     mesh_id = 0;
+    MELField.SetMELCoef(state,MELCoef1_init,MELCoef2_init);
     SetStrain(state);
     mesh_id = state.mesh->Id();
   }
 }
-
 
 void YY_StageMEL::GetEnergy
 (const Oxs_SimState& state, Oxs_EnergyData& oed) const
@@ -319,12 +319,11 @@ void YY_StageMEL::SetStrain(const Oxs_SimState& state) const
 void YY_StageMEL::SelectElasticityInputType()
 {
   // Sets several flags for elasticity input.
+
   // Whether you use displacement or strain
   use_u = HasInitValue("u_script") || HasInitValue("u_files");
 
-  // ======================================================================
   // Whether filelist(s) or script(s)
-  // ======================================================================
   if(use_u) {
     use_u_filelist = HasInitValue("u_files");
     use_u_script = HasInitValue("u_script");
@@ -431,7 +430,5 @@ void YY_StageMEL::SelectElasticityInputType()
       // Default value = 0, i.e., no preference.
     }
   }
-  // ======================================================================
   // END: Whether filelist(s) or script(s)
-  // ======================================================================
 }
