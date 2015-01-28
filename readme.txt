@@ -1,13 +1,13 @@
 YY_MEL: OOMMF Magnetoelastic Extension Module
 Release ver. 1.0.0
-This file was last modified on 2015-01-27.
+This file was last modified on 2015-01-28.
 
 
 What's this:
 
 YY_MEL module is an OOMMF extension to include the magnetoelastic copuling in
 the micromagnetic simulation. The code is based on the work developed for
-Yahagi et al, Phys. Rev. Lett., 90, 140405(R) (2014).
+Yahagi et al, Phys. Rev. B, 90, 140405(R) (2014).
 
 
 Basic principle:
