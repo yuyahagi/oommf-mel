@@ -4,7 +4,7 @@
  * YY_StageMEL class.
  * Calculates MEL field/energy for each stage.
  * 
- * Last updated on 2015-01-27 by Yu Yahagi
+ * Release ver. 1.0.0 (2015-01-27)
  * 
  */
 

@@ -4,7 +4,7 @@
  * yy_mel_util.* contain YY_MELField class , which is to be used by other
  * YY_*MEL classes
  *
- * Last updated on 2015-01-27 by Yu Yahagi
+ * Release ver. 1.0.0 (2015-01-27)
  * 
  */
 
