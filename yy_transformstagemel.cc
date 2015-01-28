@@ -5,7 +5,7 @@
  * Adds time/stage-dependence on YY_StageMEL by transforming elastic input
  * specified for each stage and calculating MEL field/energy.
  * 
- * Last updated on 2015-01-27 by Yu Yahagi
+ * Release ver. 1.0.0 (2015-01-27)
  * 
  */
 
