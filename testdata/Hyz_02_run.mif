@@ -131,7 +131,6 @@ proc StageFileField2 { tStage Ns file_input amp_coef stage } {
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($n)/$Ns]
 
 # Evolver/Driver
 Specify Oxs_EulerEvolve [subst {
