@@ -118,7 +118,6 @@ proc StageFileField1 { tStage Ns file_input amp_coef stage } {
     file $workname_Hstage
   }]
 }
-#  set coef [expr double($Ns-$n)/$Ns]
 
 proc StageFileField2 { tStage Ns file_input amp_coef stage } {
   set file_number [expr int($stage / $Ns) + 100000 + 0 + 1]
