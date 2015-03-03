@@ -1,6 +1,6 @@
 YY_MEL: OOMMF Magnetoelastic Extension Module
-Release ver. 1.0.0
-This file was last modified on 2015-01-29.
+Release ver. 1.0.1
+This file was last modified on 2015-03-03.
 
 
 What's this:
