@@ -169,5 +169,9 @@ while the strain is transformed as
 The type of the elastic input determines the type of linaer transformation.
 
 
+License:
+This software is released under the MIT license. See LICENSE.txt.
+
+
 Contact:
 <yuyahagi2@gmail.com>
