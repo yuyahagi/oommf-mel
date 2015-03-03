@@ -1,10 +1,10 @@
-/* FILE: yy_MEL_util.h                 -*-Mode: c++-*-
+/* FILE: yy_mel_util.h                 -*-Mode: c++-*-
  *
  * OOMMF magnetoelastic coupling extension module.
  * yy_mel_util.* contain YY_MELField class , which is to be used by other
  * YY_*MEL classes
  * 
- * Release ver. 1.0.0 (2015-01-27)
+ * Release ver. 1.0.1 (2015-03-03)
  * 
  */
 
