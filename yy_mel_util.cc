@@ -305,6 +305,74 @@ void YY_MELField::TransformStrain(
 #endif
 }
 
+void YY_MELField::Interpolate(
+  const Oxs_SimState& state,
+  OC_REAL8m working_stage_stopping_time,
+  YY_MELField& MELField1,
+  YY_MELField& MELField2)
+{
+  OC_REAL8m coef0, coef1, coef2, coef3;
+  OC_REAL8m dcoef0, dcoef1, dcoef2, dcoef3;
+  ThreeVector row11, row12, row13;
+  ThreeVector drow11, drow12, drow13;
+  ThreeVector row21, row22, row23;
+  ThreeVector drow21, drow22, drow23;
+
+  OC_REAL8m t = state.stage_elapsed_time / working_stage_stopping_time;
+  coef1 = (1-t);
+  coef2 = t;
+  dcoef1 = -1/working_stage_stopping_time;
+  dcoef2 = 1/working_stage_stopping_time;
+  row11.Set(coef1,0,0);
+  row12.Set(0,coef1,0);
+  row13.Set(0,0,coef1);
+  drow11.Set(dcoef1,0,0);
+  drow12.Set(0,dcoef1,0);
+  drow13.Set(0,0,dcoef1);
+  row21.Set(coef2,0,0);
+  row22.Set(0,coef2,0);
+  row23.Set(0,0,coef2);
+  drow21.Set(dcoef2,0,0);
+  drow22.Set(0,dcoef2,0);
+  drow23.Set(0,0,dcoef2);
+
+  MELCoef1 = MELField1.MELCoef1;
+  MELCoef2 = MELField1.MELCoef2;
+  MELCoef1_valid = MELField1.MELCoef1_valid;
+  MELCoef2_valid = MELField1.MELCoef2_valid;
+  max_field = MELField1.max_field;
+  pE_pt_buf = MELField1.pE_pt_buf;
+  if(MELField1.displacement_valid) {
+    MELField1.TransformDisplacement(state, row11, row12, row13, drow11, drow12, drow13);
+    MELField2.TransformDisplacement(state, row21, row22, row23, drow21, drow22, drow23);
+    strain_valid = false;
+    u        = MELField1.u;
+    u       += MELField2.u;
+    u_cache  = MELField1.u_cache;
+    u_cache += MELField2.u_cache;
+    du       = MELField1.du;
+    du      += MELField2.du;
+    CalculateStrain(state);
+    strain_valid = true;
+  } else if(MELField1.strain_valid) {
+    MELField1.TransformStrain(state, row11, row12, row13, drow11, drow12, drow13);
+    MELField2.TransformStrain(state, row21, row22, row23, drow21, drow22, drow23);
+    displacement_valid = false;
+    e_diag           = MELField1.e_diag;
+    e_diag          += MELField2.e_diag;
+    e_diag_cache     = MELField1.e_diag_cache;
+    e_diag_cache    += MELField2.e_diag_cache;
+    de_diag          = MELField1.de_diag;
+    de_diag         += MELField2.de_diag;
+    e_offdiag        = MELField1.e_offdiag;
+    e_offdiag       += MELField2.e_offdiag;
+    e_offdiag_cache = MELField1.e_offdiag_cache;
+    e_offdiag_cache += MELField2.e_offdiag_cache;
+    de_offdiag       = MELField1.de_offdiag;
+    de_offdiag      += MELField2.de_offdiag;
+  }
+}
+
 void YY_MELField::CalculateMELField(
   const Oxs_SimState& state,
   OC_REAL8m hmult,

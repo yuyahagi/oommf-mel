@@ -107,6 +107,21 @@ public:
       ThreeVector& row1, ThreeVector& row2, ThreeVector& row3,
       ThreeVector& drow1, ThreeVector& drow2, ThreeVector& drow3);
 
+  // Note: The following member functions take two YY_MELField instances
+  // and update *this with the interpolation. This is supposed to be a
+  // convenient way of simulating time-varying nonuniform elasticity input.
+  // This functionality can also be achieved with two YY_TransformStageMEL
+  // entries, which have better flexibility, but it tends to be very slow
+  // as it involves frequent Tcl script evaluations. The functions update
+  // the two input YY_MELField with TransformDisplacement() or 
+  // TransformStrain() first. Note that it changes their u, du, or e_diag,
+  // e_offdiag, de_diag, de_offdiag too while keeping their *_cache's.
+  void Interpolate(
+      const Oxs_SimState& state,
+      OC_REAL8m working_stage_stopping_time,
+      YY_MELField& MELField1,
+      YY_MELField& MELField2);
+
   void CalculateMELField(
     const Oxs_SimState& state,
     OC_REAL8m hmult,
