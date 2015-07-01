@@ -20,7 +20,7 @@ set file_input  0
 set H_input 7000
 set HAcAmpCoef_input 1
 
-# For TransformStageMEL
+# For InterpolateStageMEL
 set tSimulation 1e-9
 set tSample 2e-12
 set tStage $tSample
@@ -85,33 +85,21 @@ Specify Oxs_UZeeman [subst {
 
 Specify Oxs_Demag {}
 
-# YY_TransformStageMEL test
 Specify Oxs_UniformScalarField:B {
   value 7.85e6
 }
 
-Specify YY_TransformStageMEL:StageField1 [subst {
+Specify YY_InterpolateStageMEL:StageField [subst {
   B1 :B
   B2 :B
-  e_diag_script e_diag_filefield1
-  e_offdiag_script e_offdiag_filefield1
+  e_diag_script e_diag_filefield
+  e_offdiag_script e_offdiag_filefield
   stage_count $nStage
-  type diagonal
-  script { Transform1 $tStage }
+  type linear
+  stopping_time { $stopping_time_list }
 }]
 
-Specify YY_TransformStageMEL:StageField2 [subst {
-  B1 :B
-  B2 :B
-  e_diag_script e_diag_filefield2
-  e_offdiag_script e_offdiag_filefield2
-  stage_count $nStage
-  type diagonal
-  script { Transform2 $tStage }
-}]
-#  script { Transform2 10e9 }
-
-proc e_diag_filefield1 { stage } {
+proc e_diag_filefield { stage } {
   set filelist { strain_diag_0.ovf strain_diag_1.ovf strain_diag_2.ovf strain_diag_3.ovf strain_diag_4.ovf strain_diag_5.ovf strain_diag_6.ovf strain_diag_7.ovf strain_diag_8.ovf strain_diag_9.ovf strain_diag_10.ovf strain_diag_11.ovf strain_diag_12.ovf strain_diag_13.ovf strain_diag_14.ovf strain_diag_15.ovf strain_diag_16.ovf strain_diag_17.ovf strain_diag_18.ovf strain_diag_19.ovf strain_diag_20.ovf strain_diag_21.ovf strain_diag_22.ovf strain_diag_23.ovf strain_diag_24.ovf strain_diag_25.ovf strain_diag_26.ovf strain_diag_27.ovf strain_diag_28.ovf strain_diag_29.ovf strain_diag_30.ovf strain_diag_31.ovf strain_diag_32.ovf strain_diag_33.ovf strain_diag_34.ovf strain_diag_35.ovf strain_diag_36.ovf strain_diag_37.ovf strain_diag_38.ovf strain_diag_39.ovf strain_diag_40.ovf }
   set spec Oxs_FileVectorField
   lappend spec [subst {
@@ -121,7 +109,7 @@ proc e_diag_filefield1 { stage } {
   return $spec
 }
 
-proc e_offdiag_filefield1 { stage } {
+proc e_offdiag_filefield { stage } {
   set filelist { strain_offdiag_0.ovf strain_offdiag_1.ovf strain_offdiag_2.ovf strain_offdiag_3.ovf strain_offdiag_4.ovf strain_offdiag_5.ovf strain_offdiag_6.ovf strain_offdiag_7.ovf strain_offdiag_8.ovf strain_offdiag_9.ovf strain_offdiag_10.ovf strain_offdiag_11.ovf strain_offdiag_12.ovf strain_offdiag_13.ovf strain_offdiag_14.ovf strain_offdiag_15.ovf strain_offdiag_16.ovf strain_offdiag_17.ovf strain_offdiag_18.ovf strain_offdiag_19.ovf strain_offdiag_20.ovf strain_offdiag_21.ovf strain_offdiag_22.ovf strain_offdiag_23.ovf strain_offdiag_24.ovf strain_offdiag_25.ovf strain_offdiag_26.ovf strain_offdiag_27.ovf strain_offdiag_28.ovf strain_offdiag_29.ovf strain_offdiag_30.ovf strain_offdiag_31.ovf strain_offdiag_32.ovf strain_offdiag_33.ovf strain_offdiag_34.ovf strain_offdiag_35.ovf strain_offdiag_36.ovf strain_offdiag_37.ovf strain_offdiag_38.ovf strain_offdiag_39.ovf strain_offdiag_40.ovf }
   set spec Oxs_FileVectorField
   lappend spec [subst {
@@ -129,71 +117,6 @@ proc e_offdiag_filefield1 { stage } {
     file [lindex $filelist $stage]
   }]
   return $spec
-}
-
-proc e_diag_filefield2 { stage } {
-  set filelist { strain_diag_1.ovf strain_diag_2.ovf strain_diag_3.ovf strain_diag_4.ovf strain_diag_5.ovf strain_diag_6.ovf strain_diag_7.ovf strain_diag_8.ovf strain_diag_9.ovf strain_diag_10.ovf strain_diag_11.ovf strain_diag_12.ovf strain_diag_13.ovf strain_diag_14.ovf strain_diag_15.ovf strain_diag_16.ovf strain_diag_17.ovf strain_diag_18.ovf strain_diag_19.ovf strain_diag_20.ovf strain_diag_21.ovf strain_diag_22.ovf strain_diag_23.ovf strain_diag_24.ovf strain_diag_25.ovf strain_diag_26.ovf strain_diag_27.ovf strain_diag_28.ovf strain_diag_29.ovf strain_diag_30.ovf strain_diag_31.ovf strain_diag_32.ovf strain_diag_33.ovf strain_diag_34.ovf strain_diag_35.ovf strain_diag_36.ovf strain_diag_37.ovf strain_diag_38.ovf strain_diag_39.ovf strain_diag_40.ovf strain_diag_41.ovf }
-  set spec Oxs_FileVectorField
-  lappend spec [subst {
-    atlas :atlas
-    file [lindex $filelist $stage]
-  }]
-  return $spec
-}
-
-proc e_offdiag_filefield2 { stage } {
-  set filelist { strain_offdiag_1.ovf strain_offdiag_2.ovf strain_offdiag_3.ovf strain_offdiag_4.ovf strain_offdiag_5.ovf strain_offdiag_6.ovf strain_offdiag_7.ovf strain_offdiag_8.ovf strain_offdiag_9.ovf strain_offdiag_10.ovf strain_offdiag_11.ovf strain_offdiag_12.ovf strain_offdiag_13.ovf strain_offdiag_14.ovf strain_offdiag_15.ovf strain_offdiag_16.ovf strain_offdiag_17.ovf strain_offdiag_18.ovf strain_offdiag_19.ovf strain_offdiag_20.ovf strain_offdiag_21.ovf strain_offdiag_22.ovf strain_offdiag_23.ovf strain_offdiag_24.ovf strain_offdiag_25.ovf strain_offdiag_26.ovf strain_offdiag_27.ovf strain_offdiag_28.ovf strain_offdiag_29.ovf strain_offdiag_30.ovf strain_offdiag_31.ovf strain_offdiag_32.ovf strain_offdiag_33.ovf strain_offdiag_34.ovf strain_offdiag_35.ovf strain_offdiag_36.ovf strain_offdiag_37.ovf strain_offdiag_38.ovf strain_offdiag_39.ovf strain_offdiag_40.ovf strain_offdiag_41.ovf }
-  set spec Oxs_FileVectorField
-  lappend spec [subst {
-    atlas :atlas
-    file [lindex $filelist $stage]
-  }]
-  return $spec
-}
-
-Ignore proc Transform1 { tStage stage stagetime totaltime } {
-  set coef1 [expr 1-double($stagetime)/$tStage]
-  set dcoef1 [expr -double(1)/$tStage]
-  set coef2 [expr 2*(1-double($stagetime)/$tStage)]
-  set dcoef2 [expr 2*(-double(1)/$tStage)]
-  set coef3 [expr 3*(1-double($stagetime)/$tStage)]
-  set dcoef3 [expr 3*(-double(1)/$tStage)]
-  return [list $coef1 $coef2 $coef3 $coef2 $coef1 $coef1 $dcoef1 $dcoef2 $dcoef3 $dcoef2 $dcoef1 $dcoef1]
-}
-
-Ignore proc Transform2 { freq stage stagetime totaltime } {
-  global pi
-  set w [expr {$freq*2*$pi}]
-  set ct [expr {cos($w*$totaltime)}]
-  set mct [expr {-1*$ct}]      ;# "mct" is "minus cosine (w)t"
-  set st [expr {sin($w*$totaltime)}]
-  set mst [expr {-1*$st}]      ;# "mst" is "minus sine (w)t"
-  return [list  $ct $mst  0 \
-                $st $ct   0 \
-                  0   0   1 \
-                [expr {$w*$mst}] [expr {$w*$mct}] 0 \
-                [expr {$w*$ct}]  [expr {$w*$mst}] 0 \
-                       0                0         0]
-}
-
-proc Transform1 { tStage stage stagetime totaltime } {
-  set coef1 [expr 1-double($stagetime)/$tStage]
-  set dcoef1 [expr -double(1)/$tStage]
-  set coef2 [expr (1-double($stagetime)/$tStage)]
-  set dcoef2 [expr (-double(1)/$tStage)]
-  set coef3 [expr (1-double($stagetime)/$tStage)]
-  set dcoef3 [expr (-double(1)/$tStage)]
-  return [list $coef1 $coef2 $coef3 $dcoef1 $dcoef2 $dcoef3]
-}
-
-proc Transform2 { tStage stage stagetime totaltime } {
-  set coef1 [expr double($stagetime)/$tStage]
-  set dcoef1 [expr double(1)/$tStage]
-  set coef2 [expr (double($stagetime)/$tStage)]
-  set dcoef2 [expr (double(1)/$tStage)]
-  set coef3 [expr double($stagetime)/$tStage]
-  set dcoef3 [expr double(1)/$tStage]
-  return [list $coef1 $coef2 $coef3 $dcoef1 $dcoef2 $dcoef3]
 }
 
 # Evolver/Driver
@@ -234,6 +157,5 @@ Destination archive mmArchive
 
 Schedule DataTable monitor_table step 1
 Schedule DataTable monitor_graph step 1
-Schedule YY_TransformStageMEL:StageField1:Field monitor_disp1 step 1
-Schedule YY_TransformStageMEL:StageField2:Field monitor_disp2 step 1
+Schedule YY_InterpolateStageMEL:StageField:Field monitor_disp1 step 1
 #Schedule DataTable archive step 100

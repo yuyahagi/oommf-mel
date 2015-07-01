@@ -22,6 +22,9 @@ TESTMIF_FIXED_STRAIN = testdata/Hyz_02_run_fixed_strain.mif
 TESTMIF_TRANSFORM = testdata/Hyz_02_run_transform.mif
 TESTMIF_TRANSFORM_STRAIN = testdata/Hyz_02_run_transform_strain.mif
 
+TESTMIF_INTERPOLATE = testdata/Hyz_02_run_interpolate.mif
+TESTMIF_INTERPOLATE_STRAIN = testdata/Hyz_02_run_interpolate_strain.mif
+
 .SUFFIXES: .cc .h .o
 
 RM = rm
@@ -67,6 +70,12 @@ test_transform:
 
 test_transform_strain:
 	$(OOMMF) oxsii $(TESTMIF_TRANSFORM_STRAIN)
+
+test_interpolate:
+	$(OOMMF) oxsii $(TESTMIF_INTERPOLATE)
+
+test_interpolate_strain:
+	$(OOMMF) oxsii $(TESTMIF_INTERPOLATE_STRAIN)
 
 # Dependency rule
 #-include Makefile.depend
